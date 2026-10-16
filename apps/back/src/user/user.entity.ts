@@ -2,24 +2,17 @@ import {
   BeforeInsert,
   Column,
   Entity,
-  ObjectId,
-  ObjectIdColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Rol } from './enums/Rol';
 import { Activity } from './enums';
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude } from 'class-transformer';
 
 @Entity()
 export class User {
-  @ObjectIdColumn()
-  @Exclude()
-  _id: ObjectId;
-
-  @Expose()
-  get id(): string {
-    return this._id?.toHexString();
-  }
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column()
   name: string;
@@ -31,10 +24,20 @@ export class User {
   @Column()
   password: string;
 
-  @Column()
+  @Column({
+    type: 'enum',
+    enum: Rol,
+    default: Rol.USER,
+    nullable: false,
+  })
   rol: Rol;
 
-  @Column({})
+  @Column({
+    type: 'enum',
+    enum: Activity,
+    array: true,
+    default: [],
+  })
   activities: Activity[];
 
   @Exclude()
@@ -44,12 +47,6 @@ export class User {
   @Exclude()
   @UpdateDateColumn()
   updatedAt: Date;
-
-  @Column()
-  favorities: number[];
-
-  @Column()
-  team: number[];
 
   @BeforeInsert()
   setDefaults(): void {

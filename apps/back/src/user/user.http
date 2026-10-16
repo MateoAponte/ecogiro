@@ -1,13 +1,13 @@
 GET http://localhost:3000/api/v1/user/69c5da1b4c47e7e8333dda89
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
 
+GET http://localhost:3000/api/v1/health
+
 GET http://localhost:3000/api/v1/user
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
 
 POST http://localhost:3000/api/v1/user
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
-
 {
   "name": "John Doe",
   "email": "john@example.com",
@@ -27,17 +27,3 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZ
 DELETE http://localhost:3000/api/v1/user/69c5da1b4c47e7e8333dda89
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
-
-PATCH http://localhost:3000/api/v1/user/69d5c75c85f355885a38c68c/favorite/2
-Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZDVjNzVjODVmMzU1ODg1YTM4YzY4YyIsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsInJvbCI6MSwiYWN0aXZpdGllcyI6WzFdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzYxOTk5OTcsImV4cCI6MTc3NjgwNDc5N30.zcSY07fV2uAxZ4Jf9KhCn30tqeCfWCjeSkKsIQKyUhM
-
-
-PATCH http://localhost:3000/api/v1/user/69c5da1b4c47e7e8333dda89/team
-Content-Type: application/json
-{
-  "team": [80, 102, 124, 308, 344, 655]
-}
-
-DELETE http://localhost:3000/api/v1/user/69c5da1b4c47e7e8333dda89/team/80
-Content-Type: application/json

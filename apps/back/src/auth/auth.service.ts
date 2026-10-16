@@ -50,6 +50,7 @@ export class AuthService {
 
   async login(body: LoginDto): Promise<TokenUserDto> {
     const user = await this.usersRepositoryService.findUserByEmail(body.email);
+
     if (!!user === false) throw new UnauthorizedException('User not found');
 
     const rPass = new EncoderService().decode(body.password);

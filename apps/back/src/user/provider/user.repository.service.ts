@@ -5,7 +5,6 @@ import { Document, UpdateResult } from 'mongodb';
 import { User } from '../user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { MongoHelper } from 'src/common/helpers/mongo.helpers';
 
 @Injectable()
 export class UserRepositoryService {
@@ -26,7 +25,7 @@ export class UserRepositoryService {
   findUserById(id: string): Promise<User | null> {
     return this.repo.findOne({
       where: {
-        _id: MongoHelper.toObjectId(id),
+        id,
       },
     });
   }
@@ -43,15 +42,10 @@ export class UserRepositoryService {
     id: string,
     body: UpdateUserDto,
   ): Promise<Document | UpdateResult> {
-    return this.repo.updateOne(
-      { _id: MongoHelper.toObjectId(id) },
-      { $set: body },
-    );
+    return this.repo.updateOne({ id }, { $set: body });
   }
 
   deleteUser(id: string): Promise<DeleteResult> {
-    const objectId = MongoHelper.toObjectId(id);
-
-    return this.repo.delete(objectId);
+    return this.repo.delete(id);
   }
 }

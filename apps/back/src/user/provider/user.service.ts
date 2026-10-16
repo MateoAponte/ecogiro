@@ -11,7 +11,6 @@ import { AuthService } from 'src/auth/auth.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UserResponseDto } from '../dto/user-response.dto';
 import { User } from '../user.entity';
-import { UpdateTeamDto } from '../dto/update-team.dto';
 
 @Injectable()
 export class UserService {
@@ -68,54 +67,6 @@ export class UserService {
     if (user == null)
       throw new NotFoundException(`User with id ${id} not found`);
     return UserResponseDto.fromEntity(user);
-  }
-
-  async updateFavorities(id: string, favorite: number): Promise<string> {
-    const { favorities, ...user } = await this.checkUser(id);
-
-    if (favorities.includes(favorite))
-      favorities.splice(favorities.indexOf(favorite), 1);
-    else favorities.push(favorite);
-
-    await this.userRepository.updateUser(id, { ...user, favorities });
-    return 'Favorities updated successfully';
-  }
-
-  async updateTeam(id: string, update: UpdateTeamDto): Promise<string> {
-    if (update.team.length > 6) {
-      throw new BadRequestException('You can only add 6 pokemon to your team');
-    }
-
-    const { ...user } = await this.checkUser(id);
-
-    const uniqueTeam = new Set(update.team);
-    if (uniqueTeam.size !== update.team.length) {
-      throw new BadRequestException('Team cannot contain duplicate pokemon');
-    }
-    await this.userRepository.updateUser(id, {
-      ...user,
-      team: update.team,
-    });
-
-    return 'Team updated successfully';
-  }
-
-  async removePokemonFromTeam(id: string, pokemonId: number): Promise<string> {
-    const { team, ...user } = await this.checkUser(id);
-
-    if (!team.includes(pokemonId)) {
-      throw new BadRequestException(
-        `Pokemon with id ${pokemonId} is not in your team`,
-      );
-    }
-
-    team.splice(team.indexOf(pokemonId), 1);
-    await this.userRepository.updateUser(id, {
-      ...user,
-      team,
-    });
-
-    return 'Pokemon removed successfully';
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<string> {

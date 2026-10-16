@@ -1,5 +1,4 @@
 import {
-  IsArray,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -44,24 +43,4 @@ export class CreateUserDto extends LoginDto {
   @IsEnum(Rol)
   @IsOptional()
   rol?: Rol;
-
-  @ApiPropertyOptional({
-    type: 'array',
-    description: 'User Team',
-    example: [80, 102, 124, 308, 344, 655],
-    isArray: true,
-  })
-  @IsArray()
-  @IsOptional()
-  team?: number[];
-
-  @ApiPropertyOptional({
-    type: 'array',
-    description: 'User Favorites',
-    example: [80, 102, 124, 308, 344, 655],
-    isArray: true,
-  })
-  @IsArray()
-  @IsOptional()
-  favorities?: number[];
 }

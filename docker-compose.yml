@@ -3,22 +3,28 @@ version: '3.8'
 services:
   # PostgreSQL Database
   db:
-    image: mongo:7
+    image: postgres:16
     container_name: db
+
     env_file:
       - .env
+
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${DB_USER:-root}
-      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD:-root}
-      MONGO_INITDB_DATABASE: ${DB_NAME:-ecogiro_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-ecogiro_db}
+
     ports:
-      - '${DB_PORT:-27017}:27017'
+      - '5433:5432'
+
     volumes:
-      - mongo_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
+
     networks:
       - template-network
+
     healthcheck:
-      test: ['CMD', 'mongosh', '--eval', 'db.adminCommand("ping")']
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-root} -d ${DB_NAME:-ecogiro_db}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -36,11 +42,10 @@ services:
       PORT: 3000
 
       DB_HOST: db
-      DB_PORT: 27017
-      DB_USER: ${DB_USER:-root}
-      DB_PASSWORD: ${DB_PASSWORD:-root}
-      DB_NAME: ${DB_NAME:-template_db}
-      DB_AUTH_SOURCE: admin
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-ecogiro_db}
 
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
@@ -68,7 +73,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  mongo_data:
+  postgres_data:
 
 networks:
   template-network:

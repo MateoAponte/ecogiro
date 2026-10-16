@@ -25,12 +25,11 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { AccessValidator } from './decorators/accessValidator.decorator';
-import { UpdateTeamDto } from './dto/update-team.dto';
 import { ActivitiesGuard, JwtAuthGuard, RolesGuard } from 'src/auth/guards';
 
 @ApiBearerAuth()
 @ApiTags('users')
-@UseGuards(JwtAuthGuard, RolesGuard, ActivitiesGuard)
+@UseGuards(RolesGuard, ActivitiesGuard, JwtAuthGuard)
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -73,30 +72,6 @@ export class UserController {
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<string> {
     return this.userService.update(id, updateUserDto);
-  }
-
-  @Patch(':id/favorite/:pokemonId')
-  updateFavorities(
-    @Param('id') id: string,
-    @Param('pokemonId') pokemonId: number,
-  ): Promise<string> {
-    return this.userService.updateFavorities(id, pokemonId);
-  }
-
-  @Patch(':id/team')
-  updateTeam(
-    @Param('id') id: string,
-    @Body() team: UpdateTeamDto,
-  ): Promise<string> {
-    return this.userService.updateTeam(id, team);
-  }
-
-  @Delete(':id/team/:pokemonId')
-  removePokemonFromTeam(
-    @Param('id') id: string,
-    @Param('pokemonId') pokemonId: number,
-  ): Promise<string> {
-    return this.userService.removePokemonFromTeam(id, pokemonId);
   }
 
   @DeleteUserDocumentation()

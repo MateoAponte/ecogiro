@@ -1,0 +1,9 @@
+POST http://localhost:3000/api/v1/auth/refresh
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjhjOGUyNzJlLTFiMjktNDRjMy05NmI0LWFiZjY5YmIxYWI5ZCIsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsImlhdCI6MTc3Mzk3Nzk0NSwiZXhwIjoxNzc0NTgyNzQ1fQ.r8lHnwY7OjgH_l0f9HpDLWM7u8ArBTHOSTXnNq6kcKM
+
+POST http://localhost:3000/api/v1/auth/encrypt
+Content-Type: application/json
+{
+  "at_secret": "ab94bf198da90b69bcd51defadfa78537a57892656217f8a3999d88071548805546f3e5736fb34466ea6a68af03a48150b8e46f859161916eb972c5497b02b92",
+  "rt_secret": "995e730f18c327841d24180e01db7a332a6a5efaf503aaa03d43f70dd783998b1fbea6ce2590ddcb71bfb08f7839def6fe0ae81faa6b6e79815aa8c43a74b6e6"
+}

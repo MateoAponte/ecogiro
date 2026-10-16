@@ -1,0 +1,13 @@
+GET http://localhost:3000/api/v1/pokemon/66d631cb7f81e824e8155bba
+Content-Type: application/json
+
+GET http://localhost:3000/api/v1/pokemon?page=1&limit=10&type=grass,ice
+Content-Type: application/json
+
+GET http://localhost:3000/api/v1/pokemon?page=1&limit=10&type=water&filter=80
+Content-Type: application/json
+POST http://localhost:3000/api/v1/pokemon?page=1&limit=1&type=grass
+Content-Type: application/json
+{
+  "pokemon_ids": [80]
+}

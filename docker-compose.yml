@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: mongo:7
+    container_name: db
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MONGO_INITDB_DATABASE: ${DB_NAME:-ecogiro_db}
+    ports:
+      - '${DB_PORT:-27017}:27017'
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - template-network
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', 'db.adminCommand("ping")']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend (NestJS API)
+  back:
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: apps/back/Dockerfile
+    container_name: back
+    environment:
+      NODE_ENV: ${NODE_ENV:-dev}
+      PORT: 3000
+
+      DB_HOST: db
+      DB_PORT: 27017
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      DB_NAME: ${DB_NAME:-template_db}
+      DB_AUTH_SOURCE: admin
+
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    ports:
+      - '3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - template-network
+    restart: unless-stopped
+
+  # Frontend (Nginx)
+  front:
+    build:
+      context: .
+      dockerfile: apps/front/Dockerfile
+    container_name: front
+    ports:
+      - '8080:8080'
+    depends_on:
+      - back
+    networks:
+      - template-network
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+
+networks:
+  template-network:
+    driver: bridge

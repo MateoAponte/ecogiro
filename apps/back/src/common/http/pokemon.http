@@ -1,0 +1,11 @@
+GET http://localhost:3000/api/v1/pokemon
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
+
+GET http://localhost:3000/api/v1/pokemon/66d631cb7f81e824e8155bba
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
+
+POST http://localhost:3000/api/v1/pokemon
+Content-Type: application/json
+{
+  "pokemon_ids": [80, 102, 124, 308, 344, 655]
+}

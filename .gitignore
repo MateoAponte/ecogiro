@@ -18,3 +18,4 @@ build/
 # Env
 .env
 .env.local
+!apps/front/.env

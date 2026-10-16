@@ -3,6 +3,9 @@ import { Rol } from '../enums';
 import { User } from '../user.entity';
 
 export class UserResponseDto {
+  @ApiProperty({ example: 0, type: Number })
+  eco_points: number;
+
   @ApiProperty({
     example: 1,
     description: 'User Id by User',
@@ -53,6 +56,7 @@ export class UserResponseDto {
     dto.rol = user.rol;
     dto.phone = user.phone;
     dto.address = user.address;
+    dto.eco_points = user.eco_points;
     return dto;
   }
 }

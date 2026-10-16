@@ -1,0 +1,61 @@
+@baseUrl = http://localhost:3000/api/v1
+@userId = 7
+@id = 40204db7-7240-4733-a998-aa811bca8634
+
+### Create
+POST {{baseUrl}}/medails
+Content-Type: application/json
+{
+  "name": "Hoja por hoja",
+  "description": "Gana tus 1ros eco puntos por completar un reciclaje",
+  "condition_type": "ECO_POINTS",
+  "condition_value": 1
+}
+
+### List
+GET {{baseUrl}}/medails
+
+### Earned medails (also evaluates new catalog conditions)
+GET {{baseUrl}}/user/{{userId}}/medails
+
+### Explicitly evaluate user conditions
+POST {{baseUrl}}/user/{{userId}}/medails/evaluate
+
+### Create a completed-recoveries medail
+POST {{baseUrl}}/medails
+Content-Type: application/json
+
+{
+  "name": "Primer reciclaje",
+  "description": "Completa una recolección",
+  "condition_type": "COMPLETED_RECOVERIES",
+  "condition_value": 1
+}
+
+### Create a recycled-weight medail (25 kg across completed recoveries)
+POST {{baseUrl}}/medails
+Content-Type: application/json
+
+{
+  "name": "25 kilos reciclados",
+  "description": "Recicla un total de 25 kg",
+  "condition_type": "RECYCLED_KG",
+  "condition_value": 25
+}
+
+### User recycling totals
+GET {{baseUrl}}/user/{{userId}}/recycling-stats
+
+### Find
+GET {{baseUrl}}/medails/{{id}}
+
+### Update
+PATCH {{baseUrl}}/medails/{{id}}
+Content-Type: application/json
+
+{
+  "description": "Descripción actualizada"
+}
+
+### Delete
+DELETE {{baseUrl}}/medails/{{id}}

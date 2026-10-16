@@ -18,6 +18,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth/guards';
 import { AccessValidator } from 'src/user/decorators/accessValidator.decorator';
 import { CreateRecoveryDto } from './dto/create-recovery.dto';
+import { UpdateRecoveryDto } from './dto/udpate-recovery.dto';
 import { RecoveryResponseDto } from './dto/recovery-response.dto';
 import { RecoveryService } from './provider/recovery.service';
 import { Rol } from 'src/user/enums';
@@ -71,7 +72,7 @@ export class RecoveryController {
   @Patch(':id')
   updateRecovery(
     @Param('id', recoveryIdPipe) id: string,
-    @Body() updateRecoveryDto: CreateRecoveryDto,
+    @Body() updateRecoveryDto: UpdateRecoveryDto,
   ): Promise<RecoveryResponseDto> {
     return this.recoveryService.updateRecovery(id, updateRecoveryDto);
   }

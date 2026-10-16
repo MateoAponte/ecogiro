@@ -1,0 +1,28 @@
+@baseUrl = http://localhost:3000/api/v1/rewards
+@id = 40204db7-7240-4733-a998-aa811bca8634
+
+### Create
+POST {{baseUrl}}
+Content-Type: application/json
+{
+  "name": "Boletas de cine",
+  "description": "2 entradas para ti",
+  "required_points": 500
+}
+
+### List
+GET {{baseUrl}}
+
+### Find
+GET {{baseUrl}}/{{id}}
+
+### Update
+PATCH {{baseUrl}}/{{id}}
+Content-Type: application/json
+
+{
+  "description": "Descripción actualizada"
+}
+
+### Delete
+DELETE {{baseUrl}}/{{id}}

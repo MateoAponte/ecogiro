@@ -17,6 +17,18 @@ export class Recovery {
   address!: string;
 
   @Column({
+    type: 'numeric',
+    precision: 12,
+    scale: 3,
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => Number(value),
+    },
+  })
+  recycled_kg!: number;
+
+  @Column({
     nullable: true,
   })
   comments!: string;

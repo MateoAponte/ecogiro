@@ -5,6 +5,12 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RecoveryResponseDto {
   @ApiProperty({
+    example: 12.5,
+    description: 'Actual recycled weight in kilograms',
+  })
+  recycled_kg: number;
+
+  @ApiProperty({
     example: 'uuid',
     description: 'Recovery UUID by Recovery',
     type: 'string',
@@ -56,6 +62,7 @@ export class RecoveryResponseDto {
   static fromEntity(recovery: Recovery): RecoveryResponseDto {
     const dto = new RecoveryResponseDto();
     dto.id = recovery.id;
+    dto.recycled_kg = recovery.recycled_kg;
     dto.scheduled_date = recovery.scheduled_date;
     dto.description = recovery.description;
     dto.address = recovery.address;

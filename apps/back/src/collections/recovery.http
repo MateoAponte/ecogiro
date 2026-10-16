@@ -1,24 +1,33 @@
-POST http://localhost:3000/api/v1/recovery
+@baseUrl = http://localhost:3000/api/v1/recovery
+@userId = 7
+@id = 40204db7-7240-4733-a998-aa811bca8636
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxNzk0NzYsImV4cCI6MTc5Mjc4NDI3Nn0.vh7S5ugcl5RaaYw2I7CbTmK8y_lx4tLu_fBht9qj-m4
+
+### Create a recovery
+POST {{baseUrl}}
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxNjg3NzMsImV4cCI6MTc5Mjc3MzU3M30.OrA-gEj2T98Q1Ec9aWWj69PS4dvUG9XFNsagicFvmRQ
+Authorization: Bearer {{authToken}}
 {
   "scheduled_date": "2022-01-01T00:00:00.000Z",
   "description": "description",
   "address": "address",
   "comments": "comments",
   "status": 1,
-  "user_id": 5
+  "user_id": {{userId}}
 }
 
-GET http://localhost:3000/api/v1/recovery?user_id=5
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxNjg3NzMsImV4cCI6MTc5Mjc3MzU3M30.OrA-gEj2T98Q1Ec9aWWj69PS4dvUG9XFNsagicFvmRQ
+### List by user
+GET {{baseUrl}}?user_id={{userId}}
+Authorization: Bearer {{authToken}}
 
-GET http://localhost:3000/api/v1/recovery/40204db7-7240-4733-a998-aa811bca8636
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxNjg3NzMsImV4cCI6MTc5Mjc3MzU3M30.OrA-gEj2T98Q1Ec9aWWj69PS4dvUG9XFNsagicFvmRQ
+### Find by recovery ID
+GET {{baseUrl}}/{{id}}
+Authorization: Bearer {{authToken}}
 
-PATCH http://localhost:3000/api/v1/recovery/40204db7-7240-4733-a998-aa811bca8636
+### Update a recovery
+PATCH {{baseUrl}}/{{id}}
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxNjg3NzMsImV4cCI6MTc5Mjc3MzU3M30.OrA-gEj2T98Q1Ec9aWWj69PS4dvUG9XFNsagicFvmRQ
+Authorization: Bearer {{authToken}}
 {
   "scheduled_date": "2022-01-01T00:00:00.000Z",
   "description": "description",
@@ -28,5 +37,16 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwiZW1haWwiO
   "user_id": 5
 }
 
-DELETE http://localhost:3000/api/v1/recovery/40204db7-7240-4733-a998-aa811bca8636
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxNjg3NzMsImV4cCI6MTc5Mjc3MzU3M30.OrA-gEj2T98Q1Ec9aWWj69PS4dvUG9XFNsagicFvmRQ
+### Delete a recovery
+DELETE {{baseUrl}}/{{id}}
+Authorization: Bearer {{authToken}}
+
+### Record actual weight and complete the recovery
+PATCH {{baseUrl}}/{{id}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "recycled_kg": 12.5,
+  "status": 5
+}

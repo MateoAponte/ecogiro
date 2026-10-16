@@ -43,18 +43,18 @@ export class UserController {
   }
 
   @GetAllUsersDocumentation()
-  @AccessValidator({
-    roles: [Rol.USER],
-  })
+  // @AccessValidator({
+  //   roles: [Rol.USER],
+  // })
   @Get()
   findAll(): Promise<UserResponseDto[]> {
     return this.userService.findAll();
   }
 
   @GetUserDocumentation()
-  @AccessValidator({
-    roles: [Rol.USER],
-  })
+  // @AccessValidator({
+  //   roles: [Rol.USER],
+  // })
   @Get(':id')
   findOne(@Param('id') id: string): Promise<UserResponseDto> {
     return this.userService.findOne(id);

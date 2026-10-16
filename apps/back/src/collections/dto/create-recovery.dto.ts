@@ -7,11 +7,29 @@ import {
   IsString,
   MaxLength,
   MinLength,
+  Min,
+  Max,
+  ValidateIf,
 } from 'class-validator';
 import { Status } from '../enums/Status.enum';
 import { Type } from 'class-transformer';
 
 export class CreateRecoveryDto {
+  @ApiPropertyOptional({
+    type: Number,
+    description:
+      'Actual recycled weight in kilograms, up to three decimal places',
+    example: 12.5,
+    default: 0,
+    minimum: 0,
+    maximum: 999999999.999,
+  })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsNumber({ maxDecimalPlaces: 3 })
+  @Min(0)
+  @Max(999999999.999)
+  recycled_kg?: number;
+
   @ApiProperty({
     type: 'string',
     description: 'scheduled date to recovery',

@@ -1,16 +1,25 @@
 import {
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
   MinLength,
+  Min,
+  ValidateIf,
 } from 'class-validator';
 import { Rol } from '../enums/Rol';
 import { LoginDto } from 'src/auth/dtos/Login.dto';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserDto extends LoginDto {
+  @ApiPropertyOptional({ type: Number, default: 0, minimum: 0 })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsInt()
+  @Min(0)
+  eco_points?: number;
+
   @ApiProperty({
     type: 'string',
     description: 'User Name',

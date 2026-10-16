@@ -1,12 +1,17 @@
-GET http://localhost:3000/api/v1/user/69c5da1b4c47e7e8333dda89
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
+@baseUrl = http://localhost:3000/api/v1/user
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxNzk0NzYsImV4cCI6MTc5Mjc4NDI3Nn0.vh7S5ugcl5RaaYw2I7CbTmK8y_lx4tLu_fBht9qj-m4
+@id = 6
 
-GET http://localhost:3000/api/v1/health
+### Get a user
+GET {{baseUrl}}/{{id}}
+Authorization: Bearer {{authToken}}
 
-GET http://localhost:3000/api/v1/user
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
+### List users
+GET {{baseUrl}}
+Authorization: Bearer {{authToken}}
 
-POST http://localhost:3000/api/v1/user
+### Create a user
+POST {{baseUrl}}
 Content-Type: application/json
 {
   "name": "John Doe",
@@ -16,9 +21,10 @@ Content-Type: application/json
   "phone": "+573001234567"
 }
 
-PATCH http://localhost:3000/api/v1/user/69c5da1b4c47e7e8333dda89
+### Update a user
+PATCH {{baseUrl}}/{{id}}
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
+Authorization: Bearer {{authToken}}
 
 {
   "name": "John Doe 2",
@@ -26,6 +32,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZ
   "password": "Abcd!123456789"
 }
 
-DELETE http://localhost:3000/api/v1/user/69c5da1b4c47e7e8333dda89
+### Delete a user
+DELETE {{baseUrl}}/{{id}}
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
+Authorization: Bearer {{authToken}}

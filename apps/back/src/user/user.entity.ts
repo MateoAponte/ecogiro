@@ -9,6 +9,7 @@ import {
 import { Rol } from './enums/Rol';
 import { Exclude } from 'class-transformer';
 import { Recovery } from 'src/collections/recovery.entity';
+import { UserMedail } from '../medails/user-medail.entity';
 
 @Entity()
 export class User {
@@ -26,6 +27,9 @@ export class User {
 
   @Column({ nullable: false })
   address!: string;
+
+  @Column({ type: 'int', default: 0 })
+  eco_points!: number;
 
   @Exclude()
   @Column()
@@ -49,6 +53,9 @@ export class User {
 
   @OneToMany(() => Recovery, (recovery) => recovery.user_id)
   recoveries!: Recovery[];
+
+  @OneToMany(() => UserMedail, (assignment) => assignment.user)
+  medails!: UserMedail[];
 
   @BeforeInsert()
   setDefaults(): void {

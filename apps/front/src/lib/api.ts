@@ -7,6 +7,11 @@
  */
 
 // Toggle this to switch non-authentication endpoints between mock and real APIs
+import {
+  getAuthTokens, getSessionVersion, saveAuthTokens, clearAuthTokens,
+  type AuthTokens,
+} from "./auth-session";
+
 export const MOCK_MODE = true;
 
 export const API_BASE_URL = import.meta.env.VITE_APP_BACKEND_API;
@@ -88,6 +93,9 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  email?: string;
+  direccion?: string;
+  foto_perfil?: string;
   user_id: number;
   rol: string;
   nombres: string;
@@ -100,12 +108,88 @@ export interface LoginResponse {
 interface LoginApiEnvelope {
   message?: string | string[];
   data?: {
+    at_secret?: string;
+    rt_secret?: string;
     user?: {
       id: number;
       name: string;
       rol: string | number;
+      eco_points?: number;
+      phone?: string;
+      email?: string;
+      address?: string;
     };
   };
+}
+
+export interface AuthResult {
+  success: boolean;
+  data?: LoginResponse;
+  tokens?: AuthTokens;
+  error?: string;
+}
+
+function parseAuthResponse(response: LoginApiEnvelope): AuthResult {
+  const data = response?.data;
+  const user = data?.user;
+  if (
+    !user || typeof user.id !== "number" || typeof user.name !== "string" ||
+    (typeof user.rol !== "string" && typeof user.rol !== "number") ||
+    typeof data.at_secret !== "string" || !data.at_secret ||
+    typeof data.rt_secret !== "string" || !data.rt_secret
+  ) {
+    return { success: false, error: "Respuesta inválida del servidor" };
+  }
+  return {
+    success: true,
+    tokens: { accessToken: data.at_secret, refreshToken: data.rt_secret },
+    data: {
+      user_id: user.id,
+      rol: String(user.rol),
+      nombres: user.name,
+      apellidos: "",
+      telefono: user.phone ?? "",
+      email: user.email ?? "",
+      direccion: user.address ?? "",
+      puntos_acumulados: user.eco_points ?? 0,
+      nivel_gamificacion: 1,
+    },
+  };
+}
+
+let refreshRequest: Promise<AuthResult> | null = null;
+
+export function apiRestoreSession(): Promise<AuthResult> {
+  if (refreshRequest) return refreshRequest;
+  const tokens = getAuthTokens();
+  if (!tokens) return Promise.resolve({ success: false });
+  const sessionVersion = getSessionVersion();
+
+  refreshRequest = (async (): Promise<AuthResult> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${tokens.refreshToken}` },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok) throw new Error("Session refresh failed");
+      const result = parseAuthResponse(await response.json());
+      // A pending refresh must not restore a session after logout or a new login.
+      if (getSessionVersion() !== sessionVersion) return { success: false };
+      if (!result.success || !result.tokens) {
+        clearAuthTokens();
+        return result;
+      }
+      saveAuthTokens(result.tokens);
+      return result;
+    } catch {
+      if (getSessionVersion() === sessionVersion) clearAuthTokens();
+      return { success: false, error: "La sesión expiró. Inicia sesión nuevamente." };
+    } finally {
+      refreshRequest = null;
+    }
+  })();
+  return refreshRequest;
 }
 
 function getLoginError(status: number, message?: string | string[]): string {
@@ -165,7 +249,7 @@ export interface UploadImageResponse {
 /**
  * Login endpoint
  */
-export async function apiLogin(email: string, password: string): Promise<{ success: boolean; data?: LoginResponse; error?: string }> {
+export async function apiLogin(email: string, password: string): Promise<AuthResult> {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
@@ -185,29 +269,7 @@ export async function apiLogin(email: string, password: string): Promise<{ succe
       return { success: false, error: getLoginError(response.status, responseData?.message) };
     }
 
-    const user = responseData.data?.user;
-    if (
-      !user ||
-      typeof user.id !== "number" ||
-      typeof user.name !== "string" ||
-      (typeof user.rol !== "string" && typeof user.rol !== "number")
-    ) {
-      console.error("Invalid login response: user data is missing or malformed");
-      return { success: false, error: "Respuesta inválida del servidor" };
-    }
-
-    return {
-      success: true,
-      data: {
-        user_id: user.id,
-        rol: String(user.rol),
-        nombres: user.name,
-        apellidos: "",
-        telefono: "",
-        puntos_acumulados: 0,
-        nivel_gamificacion: 1,
-      },
-    };
+    return parseAuthResponse(responseData);
   } catch (error) {
     console.error("Login error:", error);
     return { success: false, error: "Error de conexión. Intenta de nuevo." };

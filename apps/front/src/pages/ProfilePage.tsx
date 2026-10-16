@@ -1,15 +1,13 @@
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { User, Mail, Phone, MapPin, Bell, Calendar, MessageCircle, FileText, ChevronRight, LogOut, Loader2, Pencil } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { apiGetProfile, UserProfile, getMockModeBadge } from "@/lib/api";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
 
-const PROFILE_STORAGE_KEY = "eco_user_profile";
 
 interface StoredProfile {
   nombres: string;
@@ -20,65 +18,21 @@ interface StoredProfile {
   imageUrl?: string;
 }
 
-const getStoredProfile = (): StoredProfile | null => {
-  try {
-    const stored = localStorage.getItem(PROFILE_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
-  } catch {
-    return null;
-  }
-};
-
-const saveStoredProfile = (profile: StoredProfile) => {
-  try {
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-  } catch (e) {
-    console.error("Error saving profile:", e);
-  }
-};
-
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
+  const { logout, user, updateUserProfile } = useAuth();
   const [notifications, setNotifications] = useState(false);
   const [weeklyReminder, setWeeklyReminder] = useState(false);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [localProfile, setLocalProfile] = useState<StoredProfile | null>(null);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user?.user_id) return;
-      
-      // First check for stored profile
-      const stored = getStoredProfile();
-      if (stored) {
-        setLocalProfile(stored);
-      }
-      
-      const result = await apiGetProfile(user.user_id);
-      if (result.success && result.data) {
-        setProfile(result.data);
-        // Initialize local profile if not exists
-        if (!stored) {
-          const initialProfile: StoredProfile = {
-            nombres: result.data.nombres,
-            apellidos: result.data.apellidos,
-            email: result.data.email,
-            telefono: result.data.telefono,
-            direccion: "Calle 68 Sur #49-21, Kennedy, Bogotá",
-          };
-          setLocalProfile(initialProfile);
-          saveStoredProfile(initialProfile);
-        }
-      } else {
-        toast.error(result.error || "No se pudo cargar el perfil");
-      }
-      setLoading(false);
-    };
-    fetchProfile();
-  }, [user?.user_id]);
+  const displayProfile: StoredProfile = {
+    nombres: user?.nombres ?? "Usuario",
+    apellidos: user?.apellidos ?? "",
+    email: user?.email ?? "",
+    telefono: user?.telefono ?? "",
+    direccion: user?.direccion ?? "",
+    imageUrl: user?.foto_perfil,
+  };
 
   const handleLogout = () => {
     logout();
@@ -87,48 +41,27 @@ export default function ProfilePage() {
   };
 
   const handleSaveProfile = (data: StoredProfile) => {
-    setLocalProfile(data);
-    saveStoredProfile(data);
+    updateUserProfile({
+      nombres: data.nombres,
+      apellidos: data.apellidos,
+      email: data.email,
+      telefono: data.telefono,
+      direccion: data.direccion,
+      foto_perfil: data.imageUrl,
+    });
   };
 
-  const mockBadge = getMockModeBadge();
-
-  if (loading) {
-    return (
-      <MobileLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </MobileLayout>
-    );
-  }
-
-  const displayProfile = localProfile || {
-    nombres: profile?.nombres || "Usuario",
-    apellidos: profile?.apellidos || "",
-    email: profile?.email || "",
-    telefono: profile?.telefono || "",
-    direccion: "Calle 68 Sur #49-21, Kennedy, Bogotá",
-  };
-  
   const fullName = `${displayProfile.nombres} ${displayProfile.apellidos}`.trim();
 
   return (
     <MobileLayout>
       <div className="px-5 py-6 space-y-6">
-        {/* Mock Mode Badge */}
-        {mockBadge && (
-          <div className="bg-amber-100 text-amber-800 text-xs font-medium px-3 py-1.5 rounded-full text-center animate-pulse">
-            {mockBadge}
-          </div>
-        )}
-        
         {/* Header with Edit Button */}
         <header className="text-center animate-fade-up relative">
           <div className="relative inline-block">
             <div className="w-20 h-20 rounded-full bg-eco-green-light flex items-center justify-center mx-auto mb-4 overflow-hidden">
-              {localProfile?.imageUrl ? (
-                <img src={localProfile.imageUrl} alt="Profile" className="w-full h-full object-cover" />
+              {displayProfile.imageUrl ? (
+                <img src={displayProfile.imageUrl} alt="Profile" className="w-full h-full object-cover" />
               ) : (
                 <User className="w-10 h-10 text-primary" />
               )}
@@ -142,7 +75,7 @@ export default function ProfilePage() {
             </button>
           </div>
           <h1 className="text-xl font-display font-bold text-foreground">{fullName}</h1>
-          <p className="text-muted-foreground text-sm">Miembro desde 2024</p>
+          <p className="text-muted-foreground text-sm">Tu perfil EcoGiro</p>
         </header>
 
         {/* User info */}
@@ -150,7 +83,7 @@ export default function ProfilePage() {
           <h2 className="eco-section-title">Datos personales</h2>
           <div className="eco-card space-y-4">
             <InfoRow icon={Mail} label="Correo" value={displayProfile.email} />
-            <InfoRow icon={Phone} label="Teléfono" value={displayProfile.telefono ? `+57 ${displayProfile.telefono}` : ""} />
+            <InfoRow icon={Phone} label="Teléfono" value={displayProfile.telefono} />
             <InfoRow icon={MapPin} label="Dirección" value={displayProfile.direccion} />
           </div>
         </section>

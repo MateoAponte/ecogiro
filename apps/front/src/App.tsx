@@ -24,7 +24,9 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: ("CIUDADANO" | "CENTRO_DE_ACOPIO")[] }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isRestoringSession } = useAuth();
+
+  if (isRestoringSession) return <SessionLoading />;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -42,7 +44,9 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isRestoringSession } = useAuth();
+
+  if (isRestoringSession) return <SessionLoading />;
 
   if (isAuthenticated) {
     // Redirect based on role
@@ -53,6 +57,14 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+function SessionLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <p role="status" className="text-muted-foreground">Validando sesión...</p>
+    </div>
+  );
 }
 
 // ScrollToTop component to reset scroll on route change

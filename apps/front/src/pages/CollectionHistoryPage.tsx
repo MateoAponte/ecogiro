@@ -25,6 +25,8 @@ const getSavedRatings = (): Record<string, { rating: number; tip: number | null 
 
 // Status config
 const statusConfig: Record<string, { label: string; className: string }> = {
+  CANCELADO: { label: "Cancelado", className: "bg-muted text-muted-foreground" },
+  EXPIRADO: { label: "Expirado", className: "bg-muted text-muted-foreground" },
   RECOGIDO: {
     label: "Recogido",
     className: "bg-eco-green-light text-primary",
@@ -43,11 +45,11 @@ export default function CollectionHistoryPage() {
   useEffect(() => {
     refetchReports();
     setSavedRatings(getSavedRatings());
-  }, []);
+  }, [refetchReports]);
 
   // Filter and sort history
   const history = useMemo(() => {
-    let filtered = reports.filter((r) => r.rre_estado === "RECOGIDO");
+    let filtered = reports.filter((r) => ["RECOGIDO", "CANCELADO", "EXPIRADO"].includes(r.rre_estado));
     
     // Apply date range filter
     if (dateRange.from) {
@@ -212,7 +214,7 @@ interface CollectionCardProps {
 function CollectionCard({ report, savedData }: CollectionCardProps) {
   const [address, setAddress] = useState<string>(report.rre_direccion_texto || "Cargando...");
 
-  const status = statusConfig.RECOGIDO;
+  const status = statusConfig[report.rre_estado] ?? statusConfig.RECOGIDO;
   const formattedDate = formatDateToSpanish(report.rre_fecha_reporte);
   const hasRating = savedData?.rating && savedData.rating > 0;
   const hasTip = savedData?.tip !== null && savedData?.tip !== undefined;

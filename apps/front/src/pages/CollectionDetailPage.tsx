@@ -33,6 +33,8 @@ const saveRating = (collectionId: string, data: { rating?: number; tip?: number 
 
 // Status config - Estados: ACEPTADO, EN_ESPERA, RECOGIDO
 const statusConfig: Record<string, { label: string; description: string; className: string; color: string }> = {
+  CANCELADO: { label: "Cancelado", description: "Esta solicitud fue cancelada.", className: "bg-muted text-muted-foreground", color: "text-muted-foreground" },
+  EXPIRADO: { label: "Expirado", description: "Esta solicitud expiró.", className: "bg-muted text-muted-foreground", color: "text-muted-foreground" },
   ACEPTADO: {
     label: "Aceptado",
     description: "Un reciclador recogerá tu plástico en la franja seleccionada.",
@@ -71,6 +73,8 @@ export default function CollectionDetailPage() {
   const [savedTipAmount, setSavedTipAmount] = useState<number | null>(null);
 
   // Find report from context
+  useEffect(() => { void refetchReports(); }, [refetchReports]);
+
   useEffect(() => {
     if (!id || isLoadingReports) return;
 

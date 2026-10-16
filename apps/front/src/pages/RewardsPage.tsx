@@ -1,8 +1,13 @@
-import { MobileLayout } from "@/components/layout/MobileLayout";
-import { Leaf, Gift, Award, Sparkles, Recycle, Lock } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { MobileLayout } from '@/components/layout/MobileLayout';
+import { Leaf, Lock } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { withMedailUnlocks, type Reward } from '@/lib/catalog-api';
+import { rewardsQueryOptions, medailsQueryOptions, userMedailsQueryOptions } from '@/lib/catalog-queries';
+import { MedailIcon } from '@/components/rewards/MedailIcon';
+import { RewardImage } from '@/components/rewards/RewardImage';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,32 +17,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-import confetti from "canvas-confetti";
-
-interface Reward {
-  id: number;
-  title: string;
-  points: number;
-  image: string;
-  subtitle?: string;
-}
-
-const mockData = {
-  rewards: [
-    { id: 1, title: "5% dcto en Juan Valdez", points: 50, image: "☕" },
-    { id: 2, title: "10% dcto en productos Éxito", points: 100, image: "🏷️" },
-    { id: 3, title: "Kit eco-aseo", points: 200, image: "🪥", subtitle: "Jabón artesanal y cepillo de bambú." },
-    { id: 4, title: "Boletas de cine", points: 500, image: "🎬", subtitle: "2 entradas para ti" },
-  ] as Reward[],
-  medals: [
-    { id: 1, title: "Primera Huella", subtitle: "Tu primer reciclaje", icon: Leaf, unlocked: true },
-    { id: 2, title: "Guardián Verde", subtitle: "5 recolecciones", icon: Award, unlocked: true },
-    { id: 3, title: "Reciclador Experto", subtitle: "10 kg reciclados", icon: Recycle, unlocked: false },
-    { id: 4, title: "Eco-Héroe", subtitle: "50 recolecciones", icon: Sparkles, unlocked: false },
-  ],
-};
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 
 const triggerConfetti = () => {
   // First burst
@@ -47,7 +29,7 @@ const triggerConfetti = () => {
     origin: { y: 0.6 },
     colors: ['#22C55E', '#16A34A', '#4ADE80', '#86EFAC', '#DCFCE7'],
   });
-  
+
   // Second burst with delay
   setTimeout(() => {
     confetti({
@@ -58,7 +40,7 @@ const triggerConfetti = () => {
       colors: ['#22C55E', '#16A34A', '#4ADE80'],
     });
   }, 150);
-  
+
   setTimeout(() => {
     confetti({
       particleCount: 50,
@@ -71,13 +53,18 @@ const triggerConfetti = () => {
 };
 
 export default function RewardsPage() {
-  const { getTotalPoints, deductPoints } = useAuth();
+  const { user, getTotalPoints, deductPoints } = useAuth();
+  const rewardsQuery = useQuery(rewardsQueryOptions);
+  const medailsQuery = useQuery(medailsQueryOptions);
+  const userMedailsQuery = useQuery(userMedailsQueryOptions(user?.user_id));
+  const medails = withMedailUnlocks(medailsQuery.data ?? [], userMedailsQuery.data ?? [], user?.user_id ?? 0);
+  const unlocksKnown = userMedailsQuery.isSuccess;
   const userPoints = getTotalPoints();
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleRewardClick = (reward: Reward) => {
-    const isAvailable = userPoints >= reward.points;
+    const isAvailable = userPoints >= reward.required_points;
     if (isAvailable) {
       setSelectedReward(reward);
       setIsDialogOpen(true);
@@ -86,12 +73,14 @@ export default function RewardsPage() {
 
   const handleConfirmRedeem = () => {
     if (selectedReward) {
-      const success = deductPoints(selectedReward.points);
+      const success = deductPoints(selectedReward.required_points);
       if (success) {
         triggerConfetti();
-        toast.success(`¡Listo! Tu boleta de "${selectedReward.title}" fue enviada a tu correo 📧`);
+        toast.success(
+          `¡Listo! Tu boleta de "${selectedReward.name}" fue enviada a tu correo 📧`,
+        );
       } else {
-        toast.error("No tienes suficientes puntos para esta recompensa");
+        toast.error('No tienes suficientes puntos para esta recompensa');
       }
       setIsDialogOpen(false);
       setSelectedReward(null);
@@ -112,41 +101,60 @@ export default function RewardsPage() {
             <Leaf className="w-10 h-10 text-primary" strokeWidth={1.5} />
           </div>
           <p className="text-muted-foreground text-sm">Tus eco-puntos</p>
-          <h1 className="text-5xl font-display font-bold text-foreground">{userPoints}</h1>
+          <h1 className="text-5xl font-display font-bold text-foreground">
+            {userPoints}
+          </h1>
         </header>
 
         {/* Rewards */}
-        <section className="eco-section animate-fade-up" style={{ animationDelay: "50ms" }}>
+        <section
+          className="eco-section animate-fade-up"
+          style={{ animationDelay: '50ms' }}
+        >
           <h2 className="eco-section-title">Recompensas</h2>
+          <CatalogStatus
+            isPending={rewardsQuery.isPending}
+            error={rewardsQuery.error}
+            isEmpty={rewardsQuery.data?.length === 0}
+            onRetry={() => void rewardsQuery.refetch()}
+          />
           <div className="grid grid-cols-2 gap-3">
-            {mockData.rewards.map((reward) => {
-              const pointsNeeded = reward.points - userPoints;
-              const progress = Math.min((userPoints / reward.points) * 100, 100);
-              const isAvailable = userPoints >= reward.points;
-              
+            {(rewardsQuery.data ?? []).map((reward) => {
+              const pointsNeeded = reward.required_points - userPoints;
+              const progress =
+                reward.required_points === 0
+                  ? 100
+                  : Math.max(
+                      0,
+                      Math.min((userPoints / reward.required_points) * 100, 100),
+                    );
+              const isAvailable = userPoints >= reward.required_points;
+
               return (
-                  <button
-                    key={reward.id}
-                    onClick={() => handleRewardClick(reward)}
-                    disabled={!isAvailable}
-                    className={cn(
-                      "eco-card text-center relative overflow-hidden flex flex-col min-h-[160px] text-left transition-all",
-                      isAvailable 
-                        ? "cursor-pointer hover:shadow-elevated active:scale-[0.98]" 
-                        : "opacity-60 cursor-not-allowed"
-                    )}
-                  >
-                  <div className="text-4xl mb-2">{reward.image}</div>
-                  <h3 className="font-medium text-foreground text-sm">{reward.title}</h3>
+                <button
+                  key={reward.id}
+                  onClick={() => handleRewardClick(reward)}
+                  disabled={!isAvailable}
+                  className={cn(
+                    'eco-card text-center relative overflow-hidden flex flex-col min-h-[160px] text-left transition-all',
+                    isAvailable
+                      ? 'cursor-pointer hover:shadow-elevated active:scale-[0.98]'
+                      : 'opacity-60 cursor-not-allowed',
+                  )}
+                >
+                  <RewardImage src={reward.image_url} name={reward.name} />
+                  <h3 className="font-medium text-foreground text-sm">{reward.name}</h3>
                   <p className="text-[10px] text-muted-foreground mt-0.5 min-h-[28px]">
-                    {reward.subtitle || "\u00A0"}
+                    {reward.description || '\u00A0'}
                   </p>
                   <div className="mt-auto pt-2">
-                    <p className="text-xs text-muted-foreground">{reward.points} puntos</p>
+                    <p className="text-xs text-muted-foreground">
+                      {reward.required_points} puntos
+                    </p>
                     {!isAvailable && (
                       <div className="mt-2">
                         <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div 
+                          <div
                             className="h-full bg-primary rounded-full transition-all duration-300"
                             style={{ width: `${progress}%` }}
                           />
@@ -169,42 +177,56 @@ export default function RewardsPage() {
         </section>
 
         {/* Medals */}
-        <section className="eco-section animate-fade-up" style={{ animationDelay: "100ms" }}>
+        <section
+          className="eco-section animate-fade-up"
+          style={{ animationDelay: '100ms' }}
+        >
           <h2 className="eco-section-title">Medallas</h2>
+          <CatalogStatus
+            isPending={medailsQuery.isPending}
+            error={medailsQuery.error}
+            isEmpty={medailsQuery.data?.length === 0}
+            onRetry={() => void medailsQuery.refetch()}
+          />
           <div className="grid grid-cols-2 gap-3">
-            {mockData.medals.map((medal) => (
-                <div
-                  key={medal.id}
-                  className={cn(
-                    "eco-card flex items-center gap-3",
-                    !medal.unlocked && "opacity-50"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center",
-                      medal.unlocked ? "bg-eco-green-light" : "bg-muted"
-                    )}
-                  >
-                    {medal.unlocked ? (
-                      <medal.icon className="w-6 h-6 text-primary" strokeWidth={1.5} />
-                    ) : (
-                      <Lock className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-                    )}
-                  </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-foreground text-sm truncate">{medal.title}</h3>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {medal.subtitle}
-                  </p>
+            {medails.map((medal) => (
+              <div key={medal.id} className={cn("eco-card flex items-center gap-3 relative", unlocksKnown && !medal.is_unlocked && "opacity-50")}>
+                <div className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center bg-eco-green-light">
+                  <MedailIcon name={medal.image_url} />
                 </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-foreground text-sm break-words">
+                    {medal.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground break-words">
+                    {medal.description}
+                  </p>
+                  {unlocksKnown && (
+                    <p className={cn("text-[10px] font-medium mt-1", medal.is_unlocked ? "text-primary" : "text-muted-foreground")}>
+                      {medal.is_unlocked ? 'Desbloqueada' : 'Bloqueada'}
+                    </p>
+                  )}
+                </div>
+                {unlocksKnown && !medal.is_unlocked && (
+                  <Lock className="absolute top-2 right-2 w-3 h-3 text-muted-foreground" aria-hidden="true" />
+                )}
               </div>
             ))}
           </div>
+          {userMedailsQuery.isPending && <p role="status" className="text-xs text-muted-foreground">Comprobando tus medallas...</p>}
+          {userMedailsQuery.isError && (
+            <div role="alert" className="text-sm text-destructive space-y-2 mt-3">
+              <p>No se pudo comprobar cuáles medallas tienes desbloqueadas.</p>
+              <button type="button" className="underline" onClick={() => void userMedailsQuery.refetch()}>Reintentar</button>
+            </div>
+          )}
         </section>
 
         {/* Impact */}
-        <section className="eco-section animate-fade-up" style={{ animationDelay: "150ms" }}>
+        <section
+          className="eco-section animate-fade-up"
+          style={{ animationDelay: '150ms' }}
+        >
           <h2 className="eco-section-title">Tu impacto real</h2>
           <div className="space-y-3">
             <ImpactCard
@@ -234,22 +256,25 @@ export default function RewardsPage() {
         <AlertDialogContent className="max-w-[90%] rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-center">
-              <span className="text-4xl block mb-2">{selectedReward?.image}</span>
+              {selectedReward && (
+                <RewardImage src={selectedReward.image_url} name={selectedReward.name} />
+              )}
               ¿Canjear recompensa?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center">
-              Estás a punto de canjear <strong>{selectedReward?.points} puntos</strong> por "{selectedReward?.title}". 
-              Esta acción no se puede deshacer.
+              Estás a punto de canjear{' '}
+              <strong>{selectedReward?.required_points} puntos</strong> por "
+              {selectedReward?.name}". Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleConfirmRedeem}
               className="w-full bg-primary hover:bg-primary/90"
             >
               Sí, canjear
             </AlertDialogAction>
-            <AlertDialogCancel 
+            <AlertDialogCancel
               onClick={handleCancelRedeem}
               className="w-full mt-0 border-0 text-destructive hover:text-destructive hover:bg-destructive/10"
             >
@@ -260,6 +285,39 @@ export default function RewardsPage() {
       </AlertDialog>
     </MobileLayout>
   );
+}
+
+function CatalogStatus({
+  isPending,
+  error,
+  isEmpty,
+  onRetry,
+}: {
+  isPending: boolean;
+  error: Error | null;
+  isEmpty: boolean;
+  onRetry: () => void;
+}) {
+  if (isPending)
+    return (
+      <p role="status" className="text-sm text-muted-foreground">
+        Cargando...
+      </p>
+    );
+  if (error)
+    return (
+      <div role="alert" className="text-sm text-destructive space-y-2">
+        <p>No se pudo cargar el catálogo.</p>
+        <button type="button" onClick={onRetry} className="underline font-medium">
+          Reintentar
+        </button>
+      </div>
+    );
+  if (isEmpty)
+    return (
+      <p className="text-sm text-muted-foreground">Aún no hay elementos disponibles.</p>
+    );
+  return null;
 }
 
 interface ImpactCardProps {

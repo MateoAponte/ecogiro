@@ -37,7 +37,7 @@ export async function reverseGeocode(lat: string, lng: string): Promise<string> 
 
     // Use Mapbox Geocoding API (free tier)
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbHpwN3l3Z2kwMDJqMmlzNmZtcjV0cDV5In0.xQkXgaKLQhJ2LqHLn9xZ5g&language=es`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}&language=es`
     );
 
     if (!response.ok) {

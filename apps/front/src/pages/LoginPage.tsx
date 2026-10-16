@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Lock, Mail, Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Lock, Mail, Loader2 } from "lucide-react";
 import logoEcogiro from "@/assets/logo_ecogiro.png";
-import { toast } from "sonner";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -13,12 +13,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (!email.trim() || !password.trim()) {
-      toast.error("Por favor completa todos los campos");
+      setError("Por favor completa todos los campos");
       return;
     }
 
@@ -29,7 +31,7 @@ export default function LoginPage() {
     if (result.success) {
       navigate("/");
     } else {
-      toast.error(result.error || "Error al iniciar sesión");
+      setError(result.error || "Error al iniciar sesión");
     }
   };
 
@@ -48,6 +50,12 @@ export default function LoginPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <Alert variant="destructive" className="bg-destructive/10">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
               Correo electrónico

@@ -11,7 +11,9 @@ Content-Type: application/json
 {
   "name": "John Doe",
   "email": "john@example.com",
-  "password": "Abcd!123456789"
+  "password": "Abcd!123456789",
+  "address": "Calle 68 Sur #49-21",
+  "phone": "+573001234567"
 }
 
 PATCH http://localhost:3000/api/v1/user/69c5da1b4c47e7e8333dda89

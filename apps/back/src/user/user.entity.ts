@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Rol } from './enums/Rol';
-import { Activity } from './enums';
 import { Exclude } from 'class-transformer';
 
 @Entity()
@@ -20,6 +19,12 @@ export class User {
   @Column()
   email: string;
 
+  @Column({ nullable: false })
+  phone: string;
+
+  @Column({ nullable: false })
+  address: string;
+
   @Exclude()
   @Column()
   password: string;
@@ -32,14 +37,6 @@ export class User {
   })
   rol: Rol;
 
-  @Column({
-    type: 'enum',
-    enum: Activity,
-    array: true,
-    default: [],
-  })
-  activities: Activity[];
-
   @Exclude()
   @Column()
   createdAt: Date;
@@ -51,7 +48,6 @@ export class User {
   @BeforeInsert()
   setDefaults(): void {
     if (this.rol === undefined) this.rol = Rol.USER;
-    if (this.activities === undefined) this.activities = [Activity.READER];
 
     const now = new Date();
     this.createdAt = now;

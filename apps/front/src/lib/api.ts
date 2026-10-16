@@ -1,16 +1,15 @@
 /**
  * API Service with Mock Support
  * 
- * This module provides a unified API interface that can work in mock mode
- * for testing without a backend, or in production mode with the real API.
+ * Non-authentication endpoints can use mock mode for testing without a backend.
  * 
- * Set MOCK_MODE to true to test flows without network connectivity.
+ * Authentication always uses the configured backend API.
  */
 
-// Toggle this to switch between mock and real API
+// Toggle this to switch non-authentication endpoints between mock and real APIs
 export const MOCK_MODE = true;
 
-export const API_BASE_URL = "https://ecogiro.jdxico.easypanel.host";
+export const API_BASE_URL = import.meta.env.VITE_APP_BACKEND_API;
 
 // Simulate network delay for more realistic testing
 const MOCK_DELAY = 800;
@@ -98,6 +97,43 @@ export interface LoginResponse {
   nivel_gamificacion: number;
 }
 
+interface LoginApiEnvelope {
+  message?: string | string[];
+  data?: {
+    user?: {
+      id: number;
+      name: string;
+      rol: string | number;
+    };
+  };
+}
+
+function getLoginError(status: number, message?: string | string[]): string {
+  const messages = Array.isArray(message) ? message : message ? [message] : [];
+
+  if (status === 401) {
+    if (messages.includes("User not found")) {
+      return "No existe una cuenta con este correo electrónico.";
+    }
+    return "El correo electrónico o la contraseña son incorrectos.";
+  }
+
+  if (status === 400) {
+    return messages.map((detail) => {
+      if (detail.startsWith("Password must contain")) {
+        return "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, tres dígitos consecutivos y un carácter especial (@$!%*?&).";
+      }
+      if (detail === "email must be an email") return "Ingresa un correo electrónico válido.";
+      if (detail === "password must be longer than or equal to 12 characters") {
+        return "La contraseña debe tener al menos 12 caracteres.";
+      }
+      return detail;
+    }).join(" ") || "Revisa el correo electrónico y la contraseña ingresados.";
+  }
+
+  return "No se pudo iniciar sesión. Intenta de nuevo más tarde.";
+}
+
 export interface UserProfile {
   usuario_id: number;
   nombres: string;
@@ -130,17 +166,6 @@ export interface UploadImageResponse {
  * Login endpoint
  */
 export async function apiLogin(email: string, password: string): Promise<{ success: boolean; data?: LoginResponse; error?: string }> {
-  if (MOCK_MODE) {
-    await delay(MOCK_DELAY);
-    
-    // Accept any email/password for testing
-    // Use "centro@test.com" for CENTRO_DE_ACOPIO role
-    if (email.toLowerCase().includes("centro")) {
-      return { success: true, data: mockUsers.centroAcopio as LoginResponse };
-    }
-    return { success: true, data: mockUsers.ciudadano as LoginResponse };
-  }
-
   try {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
@@ -148,14 +173,41 @@ export async function apiLogin(email: string, password: string): Promise<{ succe
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      const errorMessage = data.detail?.[0]?.msg || "Error al iniciar sesión";
-      return { success: false, error: errorMessage };
+    let responseData: LoginApiEnvelope;
+    try {
+      responseData = await response.json() as LoginApiEnvelope;
+    } catch (error) {
+      console.error("Invalid login response:", error);
+      return { success: false, error: response.ok ? "Respuesta inválida del servidor" : getLoginError(response.status) };
     }
 
-    return { success: true, data };
+    if (!response.ok) {
+      return { success: false, error: getLoginError(response.status, responseData?.message) };
+    }
+
+    const user = responseData.data?.user;
+    if (
+      !user ||
+      typeof user.id !== "number" ||
+      typeof user.name !== "string" ||
+      (typeof user.rol !== "string" && typeof user.rol !== "number")
+    ) {
+      console.error("Invalid login response: user data is missing or malformed");
+      return { success: false, error: "Respuesta inválida del servidor" };
+    }
+
+    return {
+      success: true,
+      data: {
+        user_id: user.id,
+        rol: String(user.rol),
+        nombres: user.name,
+        apellidos: "",
+        telefono: "",
+        puntos_acumulados: 0,
+        nivel_gamificacion: 1,
+      },
+    };
   } catch (error) {
     console.error("Login error:", error);
     return { success: false, error: "Error de conexión. Intenta de nuevo." };
@@ -258,7 +310,7 @@ export async function apiReverseGeocode(lat: string, lng: string): Promise<strin
     }
 
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbHpwN3l3Z2kwMDJqMmlzNmZtcjV0cDV5In0.xQkXgaKLQhJ2LqHLn9xZ5g&language=es`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}&language=es`
     );
 
     if (!response.ok) {

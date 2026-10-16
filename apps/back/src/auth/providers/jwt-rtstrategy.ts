@@ -26,7 +26,6 @@ export class JwtRtstrategy extends PassportStrategy(Strategy, 'refresh-token') {
       id: payload.id,
       email: payload.email,
       rol: payload.rol,
-      activities: payload.activities,
       name: payload.name,
     };
   }

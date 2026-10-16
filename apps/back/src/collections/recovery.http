@@ -1,0 +1,52 @@
+@baseUrl = http://localhost:3000/api/v1/recovery
+@userId = 7
+@id = 40204db7-7240-4733-a998-aa811bca8636
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxNzk0NzYsImV4cCI6MTc5Mjc4NDI3Nn0.vh7S5ugcl5RaaYw2I7CbTmK8y_lx4tLu_fBht9qj-m4
+
+### Create a recovery
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+{
+  "scheduled_date": "2022-01-01T00:00:00.000Z",
+  "description": "description",
+  "address": "address",
+  "comments": "comments",
+  "status": 1,
+  "user_id": {{userId}}
+}
+
+### List by user
+GET {{baseUrl}}?user_id={{userId}}
+Authorization: Bearer {{authToken}}
+
+### Find by recovery ID
+GET {{baseUrl}}/{{id}}
+Authorization: Bearer {{authToken}}
+
+### Update a recovery
+PATCH {{baseUrl}}/{{id}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+{
+  "scheduled_date": "2022-01-01T00:00:00.000Z",
+  "description": "description",
+  "address": "address 2",
+  "comments": "comments",
+  "status": 1,
+  "user_id": 5
+}
+
+### Delete a recovery
+DELETE {{baseUrl}}/{{id}}
+Authorization: Bearer {{authToken}}
+
+### Record actual weight and complete the recovery
+PATCH {{baseUrl}}/{{id}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "recycled_kg": 12.5,
+  "status": 5
+}

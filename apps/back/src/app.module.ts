@@ -6,6 +6,9 @@ import { AppService } from './app.service';
 import { validateEnv } from '../config/joi.validation';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { RecoveryModule } from './collections/recovery.module';
+import { RewardModule } from './rewards/reward.module';
+import { MedailModule } from './medails/medail.module';
 
 @Module({
   imports: [
@@ -35,6 +38,9 @@ import { AuthModule } from './auth/auth.module';
     }),
     UserModule,
     AuthModule,
+    RecoveryModule,
+    RewardModule,
+    MedailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -50,20 +50,20 @@ export class AuthService {
 
   async login(body: LoginDto): Promise<TokenUserDto> {
     const user = await this.usersRepositoryService.findUserByEmail(body.email);
+    const pass = body.password;
 
     if (!!user === false) throw new UnauthorizedException('User not found');
 
-    const rPass = new EncoderService().decode(body.password);
     if (
       !new RegExp(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d{3,})(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-      ).test(rPass)
+      ).test(body.password)
     )
       throw new BadRequestException(
         'Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character',
       );
 
-    const isValidate = await this.compareHash(rPass, user.password);
+    const isValidate = await this.compareHash(pass, user.password);
     if (!isValidate) throw new UnauthorizedException('Incorrect credentials');
 
     return {
@@ -72,9 +72,11 @@ export class AuthService {
     };
   }
 
-  refresh(refreshToken: string): TokenUserDto {
+  async refresh(refreshToken: string): Promise<TokenUserDto> {
     const payload = this.jwtProvider.refreshTokens(refreshToken);
-    return this.jwtProvider.signTokens(payload);
+    const user = await this.usersRepositoryService.findUserById(String(payload.id));
+    if (!user) throw new UnauthorizedException('User not found');
+    return { ...this.jwtProvider.signTokens(user), user };
   }
 
   encrypt(secret: TokenDto): TokenDto {

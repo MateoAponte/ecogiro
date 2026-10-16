@@ -1,5 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsString, MaxLength, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsInt,
+  IsOptional,
+  IsNotEmpty,
+  IsString,
+  IsUrl,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreateRewardDto {
   @ApiProperty({ example: 'Primer logro' })
@@ -17,4 +25,14 @@ export class CreateRewardDto {
   @IsInt()
   @Min(0)
   required_points!: number;
+
+  @ApiPropertyOptional({
+    example: 'https://www.ecogiro.com/assets/images/rewards/cine.png',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsUrl()
+  @IsNotEmpty()
+  @MaxLength(255)
+  image_url?: string | null;
 }

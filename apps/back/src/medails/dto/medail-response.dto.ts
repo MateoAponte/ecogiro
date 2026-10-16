@@ -8,6 +8,8 @@ export class MedailResponseDto {
   name!: string;
   @ApiProperty()
   description!: string;
+  @ApiProperty({ type: String, nullable: true })
+  image_url!: string | null;
   @ApiProperty({ enum: MedailCondition })
   condition_type!: MedailCondition;
   @ApiProperty()
@@ -19,6 +21,7 @@ export class MedailResponseDto {
     dto.description = entity.description;
     dto.condition_type = entity.condition_type;
     dto.condition_value = entity.condition_value;
+    dto.image_url = entity.image_url;
     return dto;
   }
 }

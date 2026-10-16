@@ -10,6 +10,9 @@ export class Medail {
   @Column({ type: 'varchar', length: 255 })
   description!: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  image_url!: string | null;
+
   @Column({ type: 'enum', enum: MedailCondition })
   condition_type!: MedailCondition;
   @Column({ type: 'int' })

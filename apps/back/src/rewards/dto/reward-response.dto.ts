@@ -10,12 +10,19 @@ export class RewardResponseDto {
   description!: string;
   @ApiProperty()
   required_points!: number;
+  @ApiProperty({
+    example: 'https://www.ecogiro.com/assets/images/rewards/cine.png',
+    type: String,
+    nullable: true,
+  })
+  image_url!: string | null;
   static fromEntity(entity: Reward): RewardResponseDto {
     const dto = new RewardResponseDto();
     dto.id = entity.id;
     dto.name = entity.name;
     dto.description = entity.description;
     dto.required_points = entity.required_points;
+    dto.image_url = entity.image_url;
     return dto;
   }
 }

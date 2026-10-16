@@ -1,9 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEnum,
   IsInt,
+  IsOptional,
   IsNotEmpty,
   IsString,
+  IsUrl,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -19,6 +21,14 @@ export class CreateMedailDto {
   @IsNotEmpty()
   @MaxLength(255)
   description!: string;
+  @ApiPropertyOptional({
+    example: 'Sparks',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  image_url?: string | null;
 
   @ApiProperty({ enum: MedailCondition, example: MedailCondition.ECO_POINTS })
   @IsEnum(MedailCondition)

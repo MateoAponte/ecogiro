@@ -35,7 +35,7 @@ export class AuthController {
   @RefreshDocumentation()
   @UseGuards(AuthGuard('refresh-token'))
   @Post('refresh')
-  refresh(@Req() req: Request): TokenUserDto {
+  refresh(@Req() req: Request): Promise<TokenUserDto> {
     const authHeader = req.headers.authorization;
     if (authHeader == null || authHeader == undefined)
       throw new UnauthorizedException('No authorization header found');

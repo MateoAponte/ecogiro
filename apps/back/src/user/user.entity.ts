@@ -2,32 +2,34 @@ import {
   BeforeInsert,
   Column,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Rol } from './enums/Rol';
 import { Exclude } from 'class-transformer';
+import { Recovery } from 'src/collections/recovery.entity';
 
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  name: string;
+  name!: string;
 
   @Column()
-  email: string;
+  email!: string;
 
   @Column({ nullable: false })
-  phone: string;
+  phone!: string;
 
   @Column({ nullable: false })
-  address: string;
+  address!: string;
 
   @Exclude()
   @Column()
-  password: string;
+  password!: string;
 
   @Column({
     type: 'enum',
@@ -35,15 +37,18 @@ export class User {
     default: Rol.USER,
     nullable: false,
   })
-  rol: Rol;
+  rol!: Rol;
 
   @Exclude()
   @Column()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Exclude()
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
+
+  @OneToMany(() => Recovery, (recovery) => recovery.user_id)
+  recoveries!: Recovery[];
 
   @BeforeInsert()
   setDefaults(): void {

@@ -61,6 +61,7 @@ export class UserController {
   }
 
   @UpdateUserDocumentation()
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -71,8 +72,8 @@ export class UserController {
 
   @DeleteUserDocumentation()
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':id')
   remove(@Param('id') id: string): Promise<DeleteResult> {
     return this.userService.remove(id);
   }

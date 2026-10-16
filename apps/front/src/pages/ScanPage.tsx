@@ -3,11 +3,10 @@ import { Camera, X, HelpCircle, ArrowRight, Loader2, Globe, Leaf, Recycle, Footp
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { isNative } from "@/lib/platform";
 import { takePhoto, pickFromGallery } from "@/lib/camera";
-import { apiUploadImage, ScanResponse, getMockModeBadge } from "@/lib/api";
+import { apiAnalyzeImage, type AnalyzeResponse } from "@/lib/scan-api";
 
 type ScanStep = "permission" | "camera" | "processing" | "result";
 
@@ -16,12 +15,12 @@ const CAMERA_PERMISSION_KEY = "ecogiro_camera_permission_granted";
 export default function ScanPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
   
   // Check if returning from schedule page with preserved state
   const returnState = location.state as { 
     returnToResult?: boolean; 
     capturedImage?: string; 
+    analyzeResult?: AnalyzeResponse;
     scanResult?: { material: string; peso: string; puntos_otorgados: string } 
   } | null;
   
@@ -32,7 +31,8 @@ export default function ScanPage() {
     return hasPermission ? "camera" : "permission";
   });
   const [capturedImage, setCapturedImage] = useState<string | null>(returnState?.capturedImage || null);
-  const [scanResult, setScanResult] = useState<ScanResponse | null>(() => {
+  const [scanResult, setScanResult] = useState<AnalyzeResponse | null>(() => {
+    if (returnState?.returnToResult && returnState.analyzeResult) return returnState.analyzeResult;
     if (returnState?.returnToResult && returnState.scanResult) {
       // Reconstruct scanResult from preserved state
       return {
@@ -40,8 +40,7 @@ export default function ScanPage() {
         preparacion: [],
         impacto_inmediato: [],
         daño_ambiental: [],
-        peso_estimado: [`Total: ${parseFloat(returnState.scanResult.peso) * 1000} g`],
-        puntaje: parseInt(returnState.scanResult.puntos_otorgados) || 0,
+        peso_estimado: Number(returnState.scanResult.peso) || 0,
       };
     }
     return null;
@@ -52,6 +51,8 @@ export default function ScanPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const analysisRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => analysisRequest.current?.abort(), []);
 
   // Check if we should use native camera
   useEffect(() => {
@@ -119,32 +120,26 @@ export default function ScanPage() {
     }
   };
 
-  const uploadImage = async (imageDataUrl: string): Promise<ScanResponse> => {
-    const result = await apiUploadImage(imageDataUrl, user?.user_id || 1);
-    
-    if (!result.success || !result.data) {
-      throw new Error(result.error || "Error al procesar la imagen");
-    }
-    
-    return result.data;
-  };
-
   const processImage = async (imageDataUrl: string) => {
+    if (analysisRequest.current) return;
+    const request = new AbortController();
+    analysisRequest.current = request;
     setCapturedImage(imageDataUrl);
+    setScanResult(null);
     stopCamera();
     setStep("processing");
 
     try {
-      const result = await uploadImage(imageDataUrl);
+      const result = await apiAnalyzeImage(imageDataUrl, request.signal);
+      if (request.signal.aborted) return;
       setScanResult(result);
       setStep("result");
     } catch (error) {
-      console.error("Scan error:", error);
-      toast.error("El scanner falló. Por favor, intenta de nuevo.");
+      if (request.signal.aborted) return;
+      toast.error(error instanceof Error ? error.message : "No se pudo analizar la imagen.");
       setStep("camera");
-      if (!useNativeCamera) {
-        startWebCamera();
-      }
+    } finally {
+      if (analysisRequest.current === request) analysisRequest.current = null;
     }
   };
 
@@ -202,9 +197,7 @@ export default function ScanPage() {
   const handleSchedule = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     
-    const pesoText = scanResult?.peso_estimado?.find(p => p.toLowerCase().includes("total")) || "";
-    const pesoMatch = pesoText.match(/(\d+)\s*a\s*(\d+)/);
-    const avgPeso = pesoMatch ? ((parseInt(pesoMatch[1]) + parseInt(pesoMatch[2])) / 2 / 1000).toFixed(3) : "0";
+    const avgPeso = String(scanResult?.peso_estimado ?? 0);
     
     const materialesText = scanResult?.materiales?.join(", ") || "Material reciclable";
     
@@ -212,20 +205,14 @@ export default function ScanPage() {
       state: { 
         material: materialesText,
         peso: avgPeso,
-        puntos_otorgados: scanResult?.puntaje?.toString() || "0",
+        puntos_otorgados: "0",
         capturedImage: capturedImage,
+        analyzeResult: scanResult,
       },
     });
   };
 
-  const hasValidMaterials = scanResult?.materiales && 
-    scanResult.materiales.length > 0 && 
-    !scanResult.materiales.some(m => 
-      m.toLowerCase().includes("no hay materiales") || 
-      m.toLowerCase().includes("no se detectó") ||
-      m.toLowerCase().includes("no visible")
-    ) &&
-    (scanResult?.puntaje ?? 0) > 0;
+  const hasValidMaterials = !!scanResult && scanResult.materiales.length > 0 && scanResult.peso_estimado > 0;
 
   const sectionConfig = [
     { key: "materiales", title: "Materiales detectados", icon: Package, iconColor: "text-primary" },
@@ -450,7 +437,8 @@ export default function ScanPage() {
         {scanResult && (
           <div className="space-y-4 animate-fade-up" style={{ animationDelay: "100ms" }}>
             {sectionConfig.map(({ key, title, icon: Icon, iconColor }) => {
-              const items = scanResult[key as keyof Omit<ScanResponse, 'puntaje'>];
+              const value = scanResult[key as keyof AnalyzeResponse];
+              const items = key === "peso_estimado" ? [`${scanResult.peso_estimado} kg`] : value;
               if (!items || !Array.isArray(items) || items.length === 0) return null;
 
               const isPreparacion = key === "preparacion";
@@ -468,24 +456,12 @@ export default function ScanPage() {
                   </div>
                   
                   {isPesoEstimado ? (
-                    (() => {
-                      const totalLine = items.find(p => p.toLowerCase().includes("total")) || items[0] || "";
-                      const pesoMatch = totalLine.match(/(\d+)\s*a\s*(\d+)/);
-                      let avgKg = pesoMatch 
-                        ? ((parseInt(pesoMatch[1]) + parseInt(pesoMatch[2])) / 2 / 1000).toFixed(4)
-                        : "0";
-                      
-                      if (avgKg === "0" || avgKg === "0.0000") {
-                        avgKg = "0,001";
-                      }
-                      
-                      return (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-2xl font-bold text-primary">{avgKg} kg</span>
-                          <span className="text-muted-foreground/60 bg-muted/30 px-2 py-0.5 rounded-full w-fit" style={{ fontSize: "8px" }}>Aproximado</span>
-                        </div>
-                      );
-                    })()
+                    <div className="flex flex-col gap-1">
+                      <span className="text-2xl font-bold text-primary">
+                        {scanResult.peso_estimado.toLocaleString("es-CO", { maximumFractionDigits: 3 })} kg
+                      </span>
+                      <span className="text-xs text-muted-foreground">Estimación visual; no es un peso medido.</span>
+                    </div>
                   ) : isPreparacion ? (
                     <div className="space-y-2">
                       {items.map((item, index) => (
@@ -493,13 +469,13 @@ export default function ScanPage() {
                           <span className="text-sm font-semibold text-primary flex-shrink-0 w-5">
                             {index + 1}.
                           </span>
-                          <span className="text-sm text-foreground">{item}</span>
+                          <span className="text-sm text-foreground">{item.replace(/^\s*\d+[.)]\s*/, "")}</span>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <ul className="space-y-2">
-                      {items.slice(0, 3).map((item, index) => (
+                      {items.map((item, index) => (
                         <li key={index} className="flex items-start gap-3 text-sm text-muted-foreground">
                           <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                           <span>{item}</span>

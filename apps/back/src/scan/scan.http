@@ -1,0 +1,15 @@
+@baseUrl = http://localhost:3000/api/v1
+@authToken = REEMPLAZA_CON_EL_ACCESS_TOKEN_DEL_LOGIN
+@imagePath = ./bottle.jpg
+
+### Analyze only: replace imagePath with a real JPEG, PNG or WEBP (max 5 MB)
+POST {{baseUrl}}/scan/analyze
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=EcoGiroScanBoundary
+
+--EcoGiroScanBoundary
+Content-Disposition: form-data; name="file"; filename="bottle.jpg"
+Content-Type: image/jpeg
+
+< {{imagePath}}
+--EcoGiroScanBoundary--

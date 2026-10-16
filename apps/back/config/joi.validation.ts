@@ -18,6 +18,10 @@ export const envValidationSchema = Joi.object({
   JWT_SECRET: Joi.string().min(16).required(),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
 
+  // Optional until the Analyze endpoint is configured.
+  OPENAI_API_KEY: Joi.string().trim().allow('').optional(),
+  OPENAI_SCAN_MODEL: Joi.string().trim().default('gpt-4.1-mini'),
+
   // Prefix
   API_PREFIX: Joi.string().default('api/v1'),
 }).unknown(true);

@@ -9,12 +9,17 @@ import { AuthModule } from './auth/auth.module';
 import { RecoveryModule } from './collections/recovery.module';
 import { RewardModule } from './rewards/reward.module';
 import { MedailModule } from './medails/medail.module';
+import { ScanModule } from './scan/scan.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [`.env.${process.env.NODE_ENV ?? 'dev'}`, '.env.dev'],
+      envFilePath: [
+        '.env.local',
+        `.env.${process.env.NODE_ENV ?? 'dev'}`,
+        '.env.dev',
+      ],
       validate: validateEnv,
     }),
     TypeOrmModule.forRootAsync({
@@ -41,6 +46,7 @@ import { MedailModule } from './medails/medail.module';
     RecoveryModule,
     RewardModule,
     MedailModule,
+    ScanModule,
   ],
   controllers: [AppController],
   providers: [AppService],

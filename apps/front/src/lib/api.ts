@@ -48,43 +48,6 @@ export const mockUsers = {
   },
 };
 
-export const mockScanResponse = {
-  materiales: [
-    "Botellas PET transparentes (2 unidades)",
-    "Envase de detergente HDPE (1 unidad)",
-  ],
-  preparacion: [
-    "Enjuaga las botellas para eliminar residuos",
-    "Retira las tapas y etiquetas si es posible",
-    "Aplasta los envases para ahorrar espacio",
-  ],
-  impacto_inmediato: [
-    "Evitarás que 3 envases lleguen a un relleno sanitario",
-    "Ahorrarás energía equivalente a 2 horas de luz LED",
-    "Reducirás emisiones de CO2 en 0.5 kg",
-  ],
-  daño_ambiental: [
-    "Estas botellas tardarían 450 años en degradarse",
-    "Podrían terminar en océanos afectando vida marina",
-    "Liberarían microplásticos al descomponerse",
-  ],
-  peso_estimado: [
-    "Botellas PET: 50 a 80 gramos",
-    "Envase HDPE: 100 a 150 gramos",
-    "Total estimado: 150 a 230 gramos",
-  ],
-  puntaje: 25,
-};
-
-export const mockNoMaterialsResponse = {
-  materiales: ["No se detectaron materiales reciclables en la imagen"],
-  preparacion: [],
-  impacto_inmediato: [],
-  daño_ambiental: [],
-  peso_estimado: [],
-  puntaje: 0,
-};
-
 // ============= API Types =============
 
 export interface LoginRequest {
@@ -229,21 +192,6 @@ export interface UserProfile {
   nivel_gamificacion: number;
 }
 
-export interface ScanResponse {
-  daño_ambiental: string[];
-  preparacion: string[];
-  impacto_inmediato: string[];
-  materiales: string[];
-  peso_estimado: string[];
-  puntaje: number;
-}
-
-export interface UploadImageResponse {
-  ia_result: {
-    response: string;
-  };
-}
-
 // ============= API Functions =============
 
 /**
@@ -302,54 +250,6 @@ export async function apiGetProfile(userId: number): Promise<{ success: boolean;
   } catch (error) {
     console.error("Profile fetch error:", error);
     return { success: false, error: "No se pudo cargar el perfil" };
-  }
-}
-
-/**
- * Upload and scan image
- */
-export async function apiUploadImage(
-  imageDataUrl: string,
-  userId: number,
-  campaniaId?: string
-): Promise<{ success: boolean; data?: ScanResponse; error?: string }> {
-  if (MOCK_MODE) {
-    await delay(MOCK_DELAY * 2); // Simulate longer processing time
-    
-    // Randomly return valid materials or no materials (80% success rate)
-    const hasValidMaterials = Math.random() > 0.2;
-    return { 
-      success: true, 
-      data: hasValidMaterials ? mockScanResponse : mockNoMaterialsResponse 
-    };
-  }
-
-  try {
-    const response = await fetch(imageDataUrl);
-    const blob = await response.blob();
-    const file = new File([blob], "captured-image.jpg", { type: "image/jpeg" });
-
-    const formData = new FormData();
-    formData.append("user_id", userId.toString());
-    formData.append("file", file);
-    formData.append("campania_id", campaniaId || "");
-
-    const apiResponse = await fetch(`${API_BASE_URL}/media/upload-image`, {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!apiResponse.ok) {
-      const errorData = await apiResponse.json();
-      throw new Error(errorData.detail || "Error al procesar la imagen");
-    }
-
-    const data: UploadImageResponse = await apiResponse.json();
-    const iaResult = JSON.parse(data.ia_result.response) as ScanResponse;
-    return { success: true, data: iaResult };
-  } catch (error) {
-    console.error("Upload error:", error);
-    return { success: false, error: "Error al procesar la imagen" };
   }
 }
 

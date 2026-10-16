@@ -49,7 +49,7 @@ export default function SchedulePage() {
   const { user, addPoints } = useAuth();
   const { addReport, refetchReports } = useReports();
   
-  const { material, peso, puntos_otorgados, capturedImage } = location.state || {
+  const { material, peso, puntos_otorgados, capturedImage, analyzeResult } = location.state || {
     material: "PET",
     peso: "0",
     puntos_otorgados: "0",
@@ -146,6 +146,7 @@ export default function SchedulePage() {
               state: { 
                 returnToResult: true,
                 capturedImage,
+                analyzeResult,
                 scanResult: {
                   material,
                   peso,

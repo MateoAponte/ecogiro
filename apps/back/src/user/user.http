@@ -2,6 +2,10 @@
 @authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxODg5NTEsImV4cCI6MTc5Mjc5Mzc1MX0.cZjZi7FF_oCvhdo3O6Ecn61ff2xHpys_XZyKMDQda0Q
 @id = 7
 
+@citizen = { "name": "John Doe", "email": "john@example.com", "password": "Abcd!123456789", "address": "Calle 68 Sur #49-21", "phone": "+573001234567", "rol": 1 }
+
+@recoveryAgent = {"name":"John Doe","email":"recovery@example.com","password":"Abcd!123456789","address":"Calle 68 Sur #49-21","phone":"+573001234567","rol":2}
+
 ### Get a user
 GET {{baseUrl}}/{{id}}
 Authorization: Bearer {{authToken}}
@@ -13,13 +17,7 @@ Authorization: Bearer {{authToken}}
 ### Create a user
 POST {{baseUrl}}
 Content-Type: application/json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "Abcd!123456789",
-  "address": "Calle 68 Sur #49-21",
-  "phone": "+573001234567"
-}
+{{recoveryAgent}}
 
 ### Update a user
 PATCH {{baseUrl}}/{{id}}

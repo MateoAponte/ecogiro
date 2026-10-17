@@ -182,7 +182,32 @@ function AppRoutes() {
           path="/agent"
           element={
             <ProtectedRoute allowedRoles={['RECUPERADOR']}>
-              <AgentHomePage />
+              <Navigate to="/agent/recoveries" replace />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/agent/recoveries"
+          element={
+            <ProtectedRoute allowedRoles={['RECUPERADOR']}>
+              <AgentHomePage key="available" mode="available" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/agent/accepted"
+          element={
+            <ProtectedRoute allowedRoles={['RECUPERADOR']}>
+              <AgentHomePage key="accepted" mode="accepted" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/agent/profile"
+          element={
+            <ProtectedRoute allowedRoles={['RECUPERADOR']}>
+              <ProfilePage />
             </ProtectedRoute>
           }
         />

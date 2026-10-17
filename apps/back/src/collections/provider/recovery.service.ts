@@ -37,11 +37,18 @@ export class RecoveryService {
   async findAllByUserId(
     user_id: number,
     pagination: PaginationDto = {},
+    byAgent = false,
   ): Promise<RecoveryResponseDto[]> {
     this.validatePagination(pagination);
+    if (byAgent && pagination.available) {
+      throw new BadRequestException(
+        'Assigned recoveries cannot be filtered as available',
+      );
+    }
     const recoveries = await this.recoveryRepository.findAllByUserId(
       user_id,
       pagination,
+      byAgent,
     );
     return recoveries.map((recovery) =>
       RecoveryResponseDto.fromEntity(recovery),
@@ -59,6 +66,15 @@ export class RecoveryService {
   }
 
   private validatePagination(pagination: PaginationDto): void {
+    if (
+      pagination.available &&
+      pagination.status !== undefined &&
+      ![Status.CREATED, Status.PENDING].includes(pagination.status)
+    ) {
+      throw new BadRequestException(
+        'Available recoveries must have CREATED or PENDING status',
+      );
+    }
     if (
       pagination.dateFrom &&
       pagination.dateTo &&

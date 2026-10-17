@@ -1,9 +1,28 @@
 import { Status } from '../enums/Status.enum';
-import { Type } from 'class-transformer';
-import { IsDate, IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsDate,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PaginationDto {
+  @ApiPropertyOptional({
+    type: Boolean,
+    description: 'Only unassigned CREATED/PENDING recoveries',
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    value === 'true' ? true : value === 'false' ? false : value,
+  )
+  @IsBoolean()
+  available?: boolean;
+
   @ApiPropertyOptional({
     type: String,
     format: 'date-time',

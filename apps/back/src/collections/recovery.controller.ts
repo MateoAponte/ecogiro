@@ -64,15 +64,28 @@ export class RecoveryController {
 
   @HttpCode(HttpStatus.OK)
   @Get()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'List recoveries for a user with pagination and filters',
   })
   @ApiOkResponse({ type: RecoveryResponseDto, isArray: true })
   findAllByUserId(
     @Query() query: FindRecoveriesByUserDto,
+    @Req() request: IAuthRequest,
   ): Promise<RecoveryResponseDto[]> {
     const { user_id, ...pagination } = query;
-    return this.recoveryService.findAllByUserId(user_id, pagination);
+    const role = request.user?.rol;
+    if (
+      ![Rol.ADMIN, Rol.USER, Rol.RECOVERY].includes(role as Rol) ||
+      (role !== Rol.ADMIN && user_id !== request.user?.id)
+    ) {
+      throw new ForbiddenException('You can only list your own recoveries');
+    }
+    return this.recoveryService.findAllByUserId(
+      user_id,
+      pagination,
+      role === Rol.RECOVERY,
+    );
   }
 
   @Get('all')

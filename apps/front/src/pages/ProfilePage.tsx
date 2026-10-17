@@ -34,6 +34,7 @@ interface StoredProfile {
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { logout, user, updateUserProfile } = useAuth();
+  const personalOnly = user?.rol === 'RECUPERADOR';
   const [notifications, setNotifications] = useState(false);
   const [weeklyReminder, setWeeklyReminder] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -111,56 +112,60 @@ export default function ProfilePage() {
         </section>
 
         {/* Preferences */}
-        <section
-          className="eco-section animate-fade-up"
-          style={{ animationDelay: '100ms' }}
-        >
-          <h2 className="eco-section-title">Preferencias</h2>
-          <div className="eco-card space-y-4">
-            <ToggleRow
-              icon={Bell}
-              label="Notificaciones push"
-              description="Recibe alertas sobre tus recolecciones"
-              checked={notifications}
-              onChange={setNotifications}
-            />
-            <ToggleRow
-              icon={Calendar}
-              label="Recordatorio semanal"
-              description="Te recordamos reciclar cada semana"
-              checked={weeklyReminder}
-              onChange={setWeeklyReminder}
-            />
-          </div>
-        </section>
+        {!personalOnly && (
+          <>
+            <section
+              className="eco-section animate-fade-up"
+              style={{ animationDelay: '100ms' }}
+            >
+              <h2 className="eco-section-title">Preferencias</h2>
+              <div className="eco-card space-y-4">
+                <ToggleRow
+                  icon={Bell}
+                  label="Notificaciones push"
+                  description="Recibe alertas sobre tus recolecciones"
+                  checked={notifications}
+                  onChange={setNotifications}
+                />
+                <ToggleRow
+                  icon={Calendar}
+                  label="Recordatorio semanal"
+                  description="Te recordamos reciclar cada semana"
+                  checked={weeklyReminder}
+                  onChange={setWeeklyReminder}
+                />
+              </div>
+            </section>
 
-        {/* Support */}
-        <section
-          className="eco-section animate-fade-up"
-          style={{ animationDelay: '150ms' }}
-        >
-          <h2 className="eco-section-title">Soporte</h2>
-          <div className="eco-card space-y-1 p-0 overflow-hidden">
-            <LinkRow icon={MessageCircle} label="Preguntas frecuentes" to="/faq" />
-          </div>
-        </section>
+            {/* Support */}
+            <section
+              className="eco-section animate-fade-up"
+              style={{ animationDelay: '150ms' }}
+            >
+              <h2 className="eco-section-title">Soporte</h2>
+              <div className="eco-card space-y-1 p-0 overflow-hidden">
+                <LinkRow icon={MessageCircle} label="Preguntas frecuentes" to="/faq" />
+              </div>
+            </section>
 
-        {/* Legal */}
-        <section
-          className="eco-section animate-fade-up"
-          style={{ animationDelay: '200ms' }}
-        >
-          <h2 className="eco-section-title">Legal</h2>
-          <div className="eco-card space-y-1 p-0 overflow-hidden">
-            <LinkRow icon={FileText} label="Política de datos" to="/privacy" />
+            {/* Legal */}
+            <section
+              className="eco-section animate-fade-up"
+              style={{ animationDelay: '200ms' }}
+            >
+              <h2 className="eco-section-title">Legal</h2>
+              <div className="eco-card space-y-1 p-0 overflow-hidden">
+                <LinkRow icon={FileText} label="Política de datos" to="/privacy" />
 
-            <div className="px-4 py-3 flex items-center justify-between border-t border-border">
-              <span className="text-sm text-muted-foreground">Versión</span>
-              <span className="text-sm text-muted-foreground">1.0.0</span>
-            </div>
-          </div>
-        </section>
+                <div className="px-4 py-3 flex items-center justify-between border-t border-border">
+                  <span className="text-sm text-muted-foreground">Versión</span>
+                  <span className="text-sm text-muted-foreground">1.0.0</span>
+                </div>
+              </div>
+            </section>
 
+          </>
+        )}
         {/* Logout */}
         <section
           className="eco-section animate-fade-up"

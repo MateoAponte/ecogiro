@@ -11,9 +11,79 @@ const recoverySchema = z.object({
   recycled_kg: z.number().nonnegative().default(0),
   status: z.number().int().min(0).max(5),
   user_id: z.union([z.number(), z.object({ id: z.number() })]),
+  agent_id: z.number().int().positive().nullable().optional(),
 });
 
 export type Recovery = z.infer<typeof recoverySchema>;
+
+async function getRecoveryPage(query: string, signal?: AbortSignal): Promise<Recovery[]> {
+  const tokens = getAuthTokens();
+  if (!tokens) throw new Error('Inicia sesión para consultar las recuperaciones.');
+  const response = await fetch(`${API_BASE_URL.replace(/\/$/, '')}/recovery${query}`, {
+    signal,
+    cache: 'no-store',
+    headers: { Authorization: `Bearer ${tokens.accessToken}` },
+  });
+  if (!response.ok)
+    return recoveryError(response, 'No se pudieron cargar las recuperaciones.');
+  const result = z
+    .object({ data: z.array(recoverySchema) })
+    .safeParse(await response.json().catch(() => null));
+  if (!result.success) throw new Error('El servidor devolvió recuperaciones inválidas.');
+  return result.data.data;
+}
+
+export async function apiGetAvailableRecoveries(
+  signal?: AbortSignal,
+): Promise<Recovery[]> {
+  const items = await getRecoveryPage('/all?available=true&page=1&limit=10', signal);
+  return items.filter((item) => item.agent_id == null && [0, 1].includes(item.status));
+}
+
+export async function apiGetAcceptedRecoveries(
+  agentId: number,
+  page: number,
+  signal?: AbortSignal,
+): Promise<Recovery[]> {
+  if (
+    !Number.isSafeInteger(agentId) ||
+    agentId <= 0 ||
+    !Number.isSafeInteger(page) ||
+    page < 1
+  )
+    throw new Error('Los parámetros de consulta no son válidos.');
+  const items = await getRecoveryPage(
+    `?user_id=${agentId}&status=2&page=${page}&limit=20`,
+    signal,
+  );
+  return items.filter((item) => item.agent_id === agentId && item.status === 2);
+}
+
+export async function apiAcceptRecovery(id: string, agentId: number): Promise<Recovery> {
+  if (!z.string().uuid().safeParse(id).success)
+    throw new Error('El ID de la recuperación no es válido.');
+  const tokens = getAuthTokens();
+  if (!tokens) throw new Error('Inicia sesión para aceptar una recuperación.');
+  const response = await fetch(
+    `${API_BASE_URL.replace(/\/$/, '')}/recovery/${id}/accept`,
+    {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${tokens.accessToken}` },
+    },
+  );
+  if (!response.ok) return recoveryError(response, 'No se pudo aceptar la recuperación.');
+  const result = z
+    .object({ data: recoverySchema })
+    .safeParse(await response.json().catch(() => null));
+  if (
+    !result.success ||
+    result.data.data.id !== id ||
+    result.data.data.agent_id !== agentId ||
+    result.data.data.status !== 2
+  )
+    throw new Error('El servidor no confirmó la asignación de la recuperación.');
+  return result.data.data;
+}
 
 async function recoveryError(response: Response, fallback: string): Promise<never> {
   if (response.status === 401)

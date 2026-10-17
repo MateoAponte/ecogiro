@@ -32,8 +32,9 @@ export class RecoveryRepository {
   findAllByUserId(
     user_id: number,
     pagination: PaginationDto = {},
+    byAgent = false,
   ): Promise<Recovery[]> {
-    return this.findWithFilters(pagination, user_id);
+    return this.findWithFilters(pagination, user_id, byAgent);
   }
 
   findAll(pagination: PaginationDto = {}): Promise<Recovery[]> {
@@ -43,11 +44,19 @@ export class RecoveryRepository {
   private findWithFilters(
     pagination: PaginationDto,
     userId?: number,
+    byAgent = false,
   ): Promise<Recovery[]> {
     const { dateFrom, dateTo, status, page = 1, limit = 20 } = pagination;
     const where: FindOptionsWhere<Recovery> = {};
-    if (userId !== undefined) where.user_id = userId;
+    if (userId !== undefined) {
+      if (byAgent) where.agent_id = userId;
+      else where.user_id = userId;
+    }
     if (status !== undefined) where.status = status;
+    if (pagination.available) {
+      where.agent_id = IsNull();
+      where.status = status ?? In([Status.CREATED, Status.PENDING]);
+    }
     if (dateFrom && dateTo) where.scheduled_date = Between(dateFrom, dateTo);
     else if (dateFrom) where.scheduled_date = MoreThanOrEqual(dateFrom);
     else if (dateTo) where.scheduled_date = LessThanOrEqual(dateTo);

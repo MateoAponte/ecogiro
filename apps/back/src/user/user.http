@@ -4,7 +4,7 @@
 
 @citizen = { "name": "John Doe", "email": "john@example.com", "password": "Abcd!123456789", "address": "Calle 68 Sur #49-21", "phone": "+573001234567", "rol": 1 }
 
-@recoveryAgent = {"name":"John Doe","email":"recovery@example.com","password":"Abcd!123456789","address":"Calle 68 Sur #49-21","phone":"+573001234567","rol":2}
+@recoveryAgent = {"name":"John Doe","email":"recovery@example.com","password":"Abcd!123456789","address":"Calle 68 Sur #49-21","phone":"+573001234567","rol":}
 
 ### Get a user
 GET {{baseUrl}}/{{id}}

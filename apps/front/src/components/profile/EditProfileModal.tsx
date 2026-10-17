@@ -1,16 +1,11 @@
-import { useState } from "react";
-import { User, Mail, Phone, MapPin, Camera, X } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { useState, useRef } from 'react';
+import { User, Mail, Phone, MapPin, Camera } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { localPhone } from '@/lib/profile-api';
 
 interface ProfileData {
   nombres: string;
@@ -25,74 +20,100 @@ interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData: ProfileData;
-  onSave: (data: ProfileData) => void;
+  onSave: (data: ProfileData) => Promise<void>;
 }
 
-export function EditProfileModal({ isOpen, onClose, initialData, onSave }: EditProfileModalProps) {
-  const [formData, setFormData] = useState<ProfileData>(initialData);
+export function EditProfileModal({
+  isOpen,
+  onClose,
+  initialData,
+  onSave,
+}: EditProfileModalProps) {
+  const [formData, setFormData] = useState<ProfileData>(() => ({
+    ...initialData,
+    telefono: localPhone(initialData.telefono),
+  }));
+  const saving = useRef(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(initialData.imageUrl || null);
+  const [previewImage, setPreviewImage] = useState<string | null>(
+    initialData.imageUrl || null,
+  );
 
   const handleInputChange = (field: keyof ProfileData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("La imagen no puede superar 5MB");
+        toast.error('La imagen no puede superar 5MB');
         return;
       }
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
         setPreviewImage(result);
-        setFormData(prev => ({ ...prev, imageUrl: result }));
+        setFormData((prev) => ({ ...prev, imageUrl: result }));
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleSave = async () => {
-    // Validation
-    if (!formData.nombres.trim() || !formData.apellidos.trim()) {
-      toast.error("Nombre y apellidos son obligatorios");
+    if (saving.current) return;
+    if (!formData.nombres.trim()) {
+      toast.error('El nombre es obligatorio');
       return;
     }
-    if (!formData.email.includes("@")) {
-      toast.error("Ingresa un correo válido");
+    if (!formData.email.includes('@')) {
+      toast.error('Ingresa un correo válido');
       return;
     }
     if (formData.telefono && !/^\d{10}$/.test(formData.telefono.replace(/\D/g, ''))) {
-      toast.error("El teléfono debe tener 10 dígitos");
+      toast.error('El teléfono debe tener 10 dígitos');
       return;
     }
 
+    saving.current = true;
     setIsSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    onSave(formData);
-    toast.success("Perfil actualizado correctamente");
-    setIsSaving(false);
-    onClose();
+    try {
+      await onSave(formData);
+      toast.success('Perfil actualizado correctamente');
+      onClose();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'No se pudo actualizar el perfil.',
+      );
+    } finally {
+      saving.current = false;
+      setIsSaving(false);
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open && !saving.current) onClose();
+      }}
+    >
       <DialogContent className="max-w-[95%] rounded-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center">Editar perfil</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <fieldset disabled={isSaving} className="space-y-6 py-4">
           {/* Profile Image */}
           <div className="flex justify-center">
             <div className="relative">
               <div className="w-24 h-24 rounded-full bg-eco-green-light flex items-center justify-center overflow-hidden">
                 {previewImage ? (
-                  <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+                  <img
+                    src={previewImage}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <User className="w-12 h-12 text-primary" />
                 )}
@@ -117,7 +138,7 @@ export function EditProfileModal({ isOpen, onClose, initialData, onSave }: EditP
                 <Input
                   id="nombres"
                   value={formData.nombres}
-                  onChange={(e) => handleInputChange("nombres", e.target.value)}
+                  onChange={(e) => handleInputChange('nombres', e.target.value)}
                   placeholder="Tu nombre"
                   className="eco-input"
                 />
@@ -127,7 +148,7 @@ export function EditProfileModal({ isOpen, onClose, initialData, onSave }: EditP
                 <Input
                   id="apellidos"
                   value={formData.apellidos}
-                  onChange={(e) => handleInputChange("apellidos", e.target.value)}
+                  onChange={(e) => handleInputChange('apellidos', e.target.value)}
                   placeholder="Tus apellidos"
                   className="eco-input"
                 />
@@ -143,7 +164,7 @@ export function EditProfileModal({ isOpen, onClose, initialData, onSave }: EditP
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
+                onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="tu@email.com"
                 className="eco-input"
               />
@@ -162,7 +183,12 @@ export function EditProfileModal({ isOpen, onClose, initialData, onSave }: EditP
                   id="telefono"
                   type="tel"
                   value={formData.telefono}
-                  onChange={(e) => handleInputChange("telefono", e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  onChange={(e) =>
+                    handleInputChange(
+                      'telefono',
+                      e.target.value.replace(/\D/g, '').slice(0, 10),
+                    )
+                  }
                   placeholder="3001234567"
                   className="eco-input flex-1"
                 />
@@ -177,7 +203,7 @@ export function EditProfileModal({ isOpen, onClose, initialData, onSave }: EditP
               <Input
                 id="direccion"
                 value={formData.direccion}
-                onChange={(e) => handleInputChange("direccion", e.target.value)}
+                onChange={(e) => handleInputChange('direccion', e.target.value)}
                 placeholder="Tu dirección de recolección"
                 className="eco-input"
               />
@@ -191,7 +217,7 @@ export function EditProfileModal({ isOpen, onClose, initialData, onSave }: EditP
               disabled={isSaving}
               className="w-full bg-primary hover:bg-primary/90"
             >
-              {isSaving ? "Guardando..." : "Guardar cambios"}
+              {isSaving ? 'Guardando...' : 'Guardar cambios'}
             </Button>
             <Button
               variant="ghost"
@@ -202,7 +228,7 @@ export function EditProfileModal({ isOpen, onClose, initialData, onSave }: EditP
               Cancelar
             </Button>
           </div>
-        </div>
+        </fieldset>
       </DialogContent>
     </Dialog>
   );

@@ -7,6 +7,11 @@
  */
 
 // Toggle this to switch non-authentication endpoints between mock and real APIs
+import {
+  getAuthTokens, getSessionVersion, saveAuthTokens, clearAuthTokens,
+  type AuthTokens,
+} from "./auth-session";
+
 export const MOCK_MODE = true;
 
 export const API_BASE_URL = import.meta.env.VITE_APP_BACKEND_API;
@@ -43,43 +48,6 @@ export const mockUsers = {
   },
 };
 
-export const mockScanResponse = {
-  materiales: [
-    "Botellas PET transparentes (2 unidades)",
-    "Envase de detergente HDPE (1 unidad)",
-  ],
-  preparacion: [
-    "Enjuaga las botellas para eliminar residuos",
-    "Retira las tapas y etiquetas si es posible",
-    "Aplasta los envases para ahorrar espacio",
-  ],
-  impacto_inmediato: [
-    "Evitarás que 3 envases lleguen a un relleno sanitario",
-    "Ahorrarás energía equivalente a 2 horas de luz LED",
-    "Reducirás emisiones de CO2 en 0.5 kg",
-  ],
-  daño_ambiental: [
-    "Estas botellas tardarían 450 años en degradarse",
-    "Podrían terminar en océanos afectando vida marina",
-    "Liberarían microplásticos al descomponerse",
-  ],
-  peso_estimado: [
-    "Botellas PET: 50 a 80 gramos",
-    "Envase HDPE: 100 a 150 gramos",
-    "Total estimado: 150 a 230 gramos",
-  ],
-  puntaje: 25,
-};
-
-export const mockNoMaterialsResponse = {
-  materiales: ["No se detectaron materiales reciclables en la imagen"],
-  preparacion: [],
-  impacto_inmediato: [],
-  daño_ambiental: [],
-  peso_estimado: [],
-  puntaje: 0,
-};
-
 // ============= API Types =============
 
 export interface LoginRequest {
@@ -88,6 +56,9 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  email?: string;
+  direccion?: string;
+  foto_perfil?: string;
   user_id: number;
   rol: string;
   nombres: string;
@@ -100,12 +71,89 @@ export interface LoginResponse {
 interface LoginApiEnvelope {
   message?: string | string[];
   data?: {
+    at_secret?: string;
+    rt_secret?: string;
     user?: {
       id: number;
       name: string;
       rol: string | number;
+      eco_points?: number;
+      phone?: string;
+      email?: string;
+      address?: string;
     };
   };
+}
+
+export interface AuthResult {
+  success: boolean;
+  data?: LoginResponse;
+  tokens?: AuthTokens;
+  error?: string;
+}
+
+function parseAuthResponse(response: LoginApiEnvelope): AuthResult {
+  const data = response?.data;
+  // Login and refresh share the same contract: the current profile is data.user.
+  const user = data?.user;
+  if (
+    !user || typeof user.id !== "number" || typeof user.name !== "string" ||
+    (typeof user.rol !== "string" && typeof user.rol !== "number") ||
+    typeof data.at_secret !== "string" || !data.at_secret ||
+    typeof data.rt_secret !== "string" || !data.rt_secret
+  ) {
+    return { success: false, error: "Respuesta inválida del servidor" };
+  }
+  return {
+    success: true,
+    tokens: { accessToken: data.at_secret, refreshToken: data.rt_secret },
+    data: {
+      user_id: user.id,
+      rol: String(user.rol),
+      nombres: user.name,
+      apellidos: "",
+      telefono: user.phone ?? "",
+      email: user.email ?? "",
+      direccion: user.address ?? "",
+      puntos_acumulados: user.eco_points ?? 0,
+      nivel_gamificacion: 1,
+    },
+  };
+}
+
+let refreshRequest: Promise<AuthResult> | null = null;
+
+export function apiRestoreSession(): Promise<AuthResult> {
+  if (refreshRequest) return refreshRequest;
+  const tokens = getAuthTokens();
+  if (!tokens) return Promise.resolve({ success: false });
+  const sessionVersion = getSessionVersion();
+
+  refreshRequest = (async (): Promise<AuthResult> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${tokens.refreshToken}` },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok) throw new Error("Session refresh failed");
+      const result = parseAuthResponse(await response.json());
+      // A pending refresh must not restore a session after logout or a new login.
+      if (getSessionVersion() !== sessionVersion) return { success: false };
+      if (!result.success || !result.tokens) {
+        clearAuthTokens();
+        return result;
+      }
+      saveAuthTokens(result.tokens);
+      return result;
+    } catch {
+      if (getSessionVersion() === sessionVersion) clearAuthTokens();
+      return { success: false, error: "La sesión expiró. Inicia sesión nuevamente." };
+    } finally {
+      refreshRequest = null;
+    }
+  })();
+  return refreshRequest;
 }
 
 function getLoginError(status: number, message?: string | string[]): string {
@@ -145,27 +193,12 @@ export interface UserProfile {
   nivel_gamificacion: number;
 }
 
-export interface ScanResponse {
-  daño_ambiental: string[];
-  preparacion: string[];
-  impacto_inmediato: string[];
-  materiales: string[];
-  peso_estimado: string[];
-  puntaje: number;
-}
-
-export interface UploadImageResponse {
-  ia_result: {
-    response: string;
-  };
-}
-
 // ============= API Functions =============
 
 /**
  * Login endpoint
  */
-export async function apiLogin(email: string, password: string): Promise<{ success: boolean; data?: LoginResponse; error?: string }> {
+export async function apiLogin(email: string, password: string): Promise<AuthResult> {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
@@ -185,29 +218,7 @@ export async function apiLogin(email: string, password: string): Promise<{ succe
       return { success: false, error: getLoginError(response.status, responseData?.message) };
     }
 
-    const user = responseData.data?.user;
-    if (
-      !user ||
-      typeof user.id !== "number" ||
-      typeof user.name !== "string" ||
-      (typeof user.rol !== "string" && typeof user.rol !== "number")
-    ) {
-      console.error("Invalid login response: user data is missing or malformed");
-      return { success: false, error: "Respuesta inválida del servidor" };
-    }
-
-    return {
-      success: true,
-      data: {
-        user_id: user.id,
-        rol: String(user.rol),
-        nombres: user.name,
-        apellidos: "",
-        telefono: "",
-        puntos_acumulados: 0,
-        nivel_gamificacion: 1,
-      },
-    };
+    return parseAuthResponse(responseData);
   } catch (error) {
     console.error("Login error:", error);
     return { success: false, error: "Error de conexión. Intenta de nuevo." };
@@ -240,54 +251,6 @@ export async function apiGetProfile(userId: number): Promise<{ success: boolean;
   } catch (error) {
     console.error("Profile fetch error:", error);
     return { success: false, error: "No se pudo cargar el perfil" };
-  }
-}
-
-/**
- * Upload and scan image
- */
-export async function apiUploadImage(
-  imageDataUrl: string,
-  userId: number,
-  campaniaId?: string
-): Promise<{ success: boolean; data?: ScanResponse; error?: string }> {
-  if (MOCK_MODE) {
-    await delay(MOCK_DELAY * 2); // Simulate longer processing time
-    
-    // Randomly return valid materials or no materials (80% success rate)
-    const hasValidMaterials = Math.random() > 0.2;
-    return { 
-      success: true, 
-      data: hasValidMaterials ? mockScanResponse : mockNoMaterialsResponse 
-    };
-  }
-
-  try {
-    const response = await fetch(imageDataUrl);
-    const blob = await response.blob();
-    const file = new File([blob], "captured-image.jpg", { type: "image/jpeg" });
-
-    const formData = new FormData();
-    formData.append("user_id", userId.toString());
-    formData.append("file", file);
-    formData.append("campania_id", campaniaId || "");
-
-    const apiResponse = await fetch(`${API_BASE_URL}/media/upload-image`, {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!apiResponse.ok) {
-      const errorData = await apiResponse.json();
-      throw new Error(errorData.detail || "Error al procesar la imagen");
-    }
-
-    const data: UploadImageResponse = await apiResponse.json();
-    const iaResult = JSON.parse(data.ia_result.response) as ScanResponse;
-    return { success: true, data: iaResult };
-  } catch (error) {
-    console.error("Upload error:", error);
-    return { success: false, error: "Error al procesar la imagen" };
   }
 }
 

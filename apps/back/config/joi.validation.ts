@@ -18,6 +18,13 @@ export const envValidationSchema = Joi.object({
   JWT_SECRET: Joi.string().min(16).required(),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
 
+  // Optional until the Analyze endpoint is configured.
+  GEMINI_API_KEY: Joi.string().trim().allow('').optional(),
+  GEMINI_SCAN_MODEL: Joi.string()
+    .trim()
+    .pattern(/^gemini-[a-zA-Z0-9._-]+$/)
+    .default('gemini-3.5-flash-lite'),
+
   // Prefix
   API_PREFIX: Joi.string().default('api/v1'),
 }).unknown(true);

@@ -30,6 +30,7 @@ export class RecoveryRepository {
   async findByRecoveryId(id: string): Promise<Recovery | null> {
     return this.repository.findOne({
       where: { id },
+      loadRelationIds: { relations: ['user_id'] },
     });
   }
 

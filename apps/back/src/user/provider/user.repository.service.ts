@@ -1,7 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeleteResult, MongoRepository } from 'typeorm';
-import { Document, UpdateResult } from 'mongodb';
+import { DeleteResult, Repository, UpdateResult } from 'typeorm';
 import { User } from '../user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
@@ -10,7 +9,7 @@ import { UpdateUserDto } from '../dto/update-user.dto';
 export class UserRepositoryService {
   constructor(
     @InjectRepository(User)
-    private readonly repo: MongoRepository<User>,
+    private readonly repo: Repository<User>,
   ) {}
 
   createUser(body: CreateUserDto): Promise<User> {
@@ -25,7 +24,7 @@ export class UserRepositoryService {
   findUserById(id: string): Promise<User | null> {
     return this.repo.findOne({
       where: {
-        id,
+        id: this.parseId(id),
       },
     });
   }
@@ -38,14 +37,24 @@ export class UserRepositoryService {
     });
   }
 
-  async updateUser(
-    id: string,
-    body: UpdateUserDto,
-  ): Promise<Document | UpdateResult> {
-    return this.repo.updateOne({ id }, { $set: body });
+  async updateUser(id: string, body: UpdateUserDto): Promise<UpdateResult> {
+    return this.repo.update(this.parseId(id), body);
   }
 
   deleteUser(id: string): Promise<DeleteResult> {
-    return this.repo.delete(id);
+    return this.repo.delete(this.parseId(id));
+  }
+
+  private parseId(id: string): number {
+    const value = Number(id);
+    if (
+      !/^\d+$/.test(id) ||
+      !Number.isSafeInteger(value) ||
+      value <= 0 ||
+      value > 2147483647
+    ) {
+      throw new BadRequestException('Not valid ID');
+    }
+    return value;
   }
 }

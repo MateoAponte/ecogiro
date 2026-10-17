@@ -10,6 +10,7 @@ import { RecoveryModule } from './collections/recovery.module';
 import { RewardModule } from './rewards/reward.module';
 import { MedailModule } from './medails/medail.module';
 import { ScanModule } from './scan/scan.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { ScanModule } from './scan/scan.module';
     RewardModule,
     MedailModule,
     ScanModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

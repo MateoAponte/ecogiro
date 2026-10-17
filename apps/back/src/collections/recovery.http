@@ -1,7 +1,8 @@
 @baseUrl = http://localhost:3000/api/v1/recovery
 @userId = 7
-@id = e2362d46-c71c-4ed6-81cd-c0a26b14f5c8
-@authToken = eeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UgMiIsImlhdCI6MTc5MjE5OTg0NSwiZXhwIjoxNzkyODA0NjQ1fQ.aNyNxdQamH3-nyODbmgSWLV5gOtilxtZ-Kmf-oK7Lxs
+@id = ecb641a4-c071-4b66-993f-e314de994f57
+@agentToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OSwiZW1haWwiOiJyZWNvdmVyeUBleGFtcGxlLmNvbSIsInJvbCI6MiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNzkyMjcyNTc1LCJleHAiOjE3OTI4NzczNzV9.qTIi9JnrXIENBwSTR5RqFdKJ2XCs5kZdKLb4BqJcohE
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UgMyIsImlhdCI6MTc5MjI3MjYwNCwiZXhwIjoxNzkyODc3NDA0fQ.JUS-qELAnk9NdJY6V2yNUR_JsvnmHLLo2uua1davmhY
 
 ### Create a recovery
 POST {{baseUrl}}
@@ -23,6 +24,13 @@ Authorization: Bearer {{authToken}}
 ### Find by recovery ID
 GET {{baseUrl}}/{{id}}
 Authorization: Bearer {{authToken}}
+
+### Accept a recovery (recuperador con rol 2; no requiere body)
+# Usa una solicitud CREATED/PENDING sin agente y creada por otro usuario.
+# Respuesta: 200 con status 2 y agent_id del recuperador autenticado.
+PATCH {{baseUrl}}/{{id}}/accept
+Authorization: Bearer {{agentToken}}
+Accept: application/json
 
 ### Update a recovery
 PATCH {{baseUrl}}/{{id}}

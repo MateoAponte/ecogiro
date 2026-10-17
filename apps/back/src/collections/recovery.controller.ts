@@ -12,10 +12,18 @@ import {
   Patch,
   Post,
   Query,
+  Req,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { RolesGuard } from 'src/auth/guards';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { JwtAuthGuard, RolesGuard } from 'src/auth/guards';
+import type { IAuthRequest } from '../auth/interfaces/IAuthRequest';
 import { AccessValidator } from 'src/user/decorators/accessValidator.decorator';
 import { CreateRecoveryDto } from './dto/create-recovery.dto';
 import { UpdateRecoveryDto } from './dto/udpate-recovery.dto';
@@ -75,6 +83,26 @@ export class RecoveryController {
     @Body() updateRecoveryDto: UpdateRecoveryDto,
   ): Promise<RecoveryResponseDto> {
     return this.recoveryService.updateRecovery(id, updateRecoveryDto);
+  }
+
+  @Patch(':id/accept')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Accept an available recovery as the authenticated recovery agent',
+  })
+  @ApiOkResponse({ type: RecoveryResponseDto })
+  acceptRecovery(
+    @Param('id', recoveryIdPipe) id: string,
+    @Req() request: IAuthRequest,
+  ): Promise<RecoveryResponseDto> {
+    const agentId = request.user?.id;
+    const agentRole = request.user?.rol;
+    if (typeof agentId !== 'number' || agentRole === undefined) {
+      throw new UnauthorizedException('Invalid user');
+    }
+    // The service checks Rol.RECOVERY. Identity and role never come from the body.
+    return this.recoveryService.acceptRecovery(id, agentId, agentRole);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)

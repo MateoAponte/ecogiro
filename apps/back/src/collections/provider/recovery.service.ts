@@ -1,8 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { RecoveryRepository } from './recovery.repository.service';
 import { CreateRecoveryDto } from '../dto/create-recovery.dto';
 import { RecoveryResponseDto } from '../dto/recovery-response.dto';
 import { UpdateRecoveryDto } from '../dto/udpate-recovery.dto';
+import { Status } from '../enums/Status.enum';
+import { Rol } from '../../user/enums/Rol';
+import { RecoveryEventsService } from '../events/recovery-events.service';
+import { RecoveryAcceptedEvent } from '../events/recovery-accepted.event';
 
 @Injectable()
 export class RecoveryService {
@@ -11,6 +21,7 @@ export class RecoveryService {
      * Inject Recovery Repository
      */
     private readonly recoveryRepository: RecoveryRepository,
+    private readonly recoveryEvents: RecoveryEventsService,
   ) {}
 
   async create(
@@ -33,6 +44,53 @@ export class RecoveryService {
     if (!!recovery === false) {
       throw new NotFoundException('Recovery not found');
     }
+    return RecoveryResponseDto.fromEntity(recovery);
+  }
+
+  // agentId and agentRole must come from the authenticated user, never the body.
+  async acceptRecovery(
+    id: string,
+    agentId: number,
+    agentRole: Rol,
+  ): Promise<RecoveryResponseDto> {
+    if (!Number.isSafeInteger(agentId) || agentId <= 0) {
+      throw new UnauthorizedException('Invalid user');
+    }
+    if (agentRole !== Rol.RECOVERY) {
+      throw new ForbiddenException(
+        'Only recovery agents can accept recoveries',
+      );
+    }
+
+    const recovery = await this.recoveryRepository.findByRecoveryId(id);
+    if (!recovery) throw new NotFoundException('Recovery not found');
+    if (recovery.user_id === agentId) {
+      throw new ForbiddenException('You cannot accept your own recovery');
+    }
+
+    // Retrying a successful acceptance makes no new change or event.
+    if (recovery.status === Status.ASSIGNED && recovery.agent_id === agentId) {
+      return RecoveryResponseDto.fromEntity(recovery);
+    }
+    if (
+      recovery.agent_id !== null ||
+      ![Status.CREATED, Status.PENDING].includes(recovery.status)
+    ) {
+      throw new ConflictException('Recovery is no longer available');
+    }
+
+    const accepted = await this.recoveryRepository.accept(id, agentId);
+    if (!accepted) {
+      throw new ConflictException('Recovery is no longer available');
+    }
+
+    // The conditional UPDATE has succeeded. Reflect those changes without a
+    // second read that could race with a later cancellation or deletion.
+    recovery.agent_id = agentId;
+    recovery.status = Status.ASSIGNED;
+    this.recoveryEvents.publishAccepted(
+      new RecoveryAcceptedEvent(recovery.id, recovery.user_id, agentId),
+    );
     return RecoveryResponseDto.fromEntity(recovery);
   }
 

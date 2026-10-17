@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Recovery } from '../recovery.entity';
-import { Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { CreateRecoveryDto } from '../dto/create-recovery.dto';
 import { UpdateRecoveryDto } from '../dto/udpate-recovery.dto';
+import { Status } from '../enums/Status.enum';
 
 @Injectable()
 export class RecoveryRepository {
@@ -32,6 +33,23 @@ export class RecoveryRepository {
       where: { id },
       loadRelationIds: { relations: ['user_id'] },
     });
+  }
+
+  async accept(id: string, agentId: number): Promise<boolean> {
+    // Check availability and assign in one SQL statement. Concurrent attempts
+    // cannot both match the same unassigned recovery after one has accepted it.
+    const result = await this.repository.update(
+      {
+        id,
+        agent_id: IsNull(),
+        status: In([Status.CREATED, Status.PENDING]),
+      },
+      {
+        agent_id: agentId,
+        status: Status.ASSIGNED,
+      },
+    );
+    return result.affected === 1;
   }
 
   async update(

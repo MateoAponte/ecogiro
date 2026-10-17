@@ -1,6 +1,6 @@
 @baseUrl = http://localhost:3000/api/v1/user
-@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxNzk0NzYsImV4cCI6MTc5Mjc4NDI3Nn0.vh7S5ugcl5RaaYw2I7CbTmK8y_lx4tLu_fBht9qj-m4
-@id = 6
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxODg5NTEsImV4cCI6MTc5Mjc5Mzc1MX0.cZjZi7FF_oCvhdo3O6Ecn61ff2xHpys_XZyKMDQda0Q
+@id = 7
 
 ### Get a user
 GET {{baseUrl}}/{{id}}
@@ -29,7 +29,7 @@ Authorization: Bearer {{authToken}}
 {
   "name": "John Doe 2",
   "email": "john@example.com",
-  "password": "Abcd!123456789"
+  "eco_points": 2
 }
 
 ### Delete a user

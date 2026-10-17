@@ -1,13 +1,26 @@
-import { MobileLayout } from "@/components/layout/MobileLayout";
-import { User, Mail, Phone, MapPin, Bell, Calendar, MessageCircle, FileText, ChevronRight, LogOut, Loader2, Pencil } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { EditProfileModal } from "@/components/profile/EditProfileModal";
-
+import { MobileLayout } from '@/components/layout/MobileLayout';
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Bell,
+  Calendar,
+  MessageCircle,
+  FileText,
+  ChevronRight,
+  LogOut,
+  Loader2,
+  Pencil,
+} from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { EditProfileModal } from '@/components/profile/EditProfileModal';
+import { apiUpdateUserProfile } from '@/lib/profile-api';
 
 interface StoredProfile {
   nombres: string;
@@ -26,27 +39,29 @@ export default function ProfilePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const displayProfile: StoredProfile = {
-    nombres: user?.nombres ?? "Usuario",
-    apellidos: user?.apellidos ?? "",
-    email: user?.email ?? "",
-    telefono: user?.telefono ?? "",
-    direccion: user?.direccion ?? "",
+    nombres: user?.nombres ?? 'Usuario',
+    apellidos: user?.apellidos ?? '',
+    email: user?.email ?? '',
+    telefono: user?.telefono ?? '',
+    direccion: user?.direccion ?? '',
     imageUrl: user?.foto_perfil,
   };
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
-    toast.success("Sesión cerrada");
+    navigate('/login');
+    toast.success('Sesión cerrada');
   };
 
-  const handleSaveProfile = (data: StoredProfile) => {
+  const handleSaveProfile = async (data: StoredProfile) => {
+    if (!user) throw new Error('Inicia sesión para actualizar tu perfil.');
+    const saved = await apiUpdateUserProfile(user.user_id, data);
     updateUserProfile({
-      nombres: data.nombres,
-      apellidos: data.apellidos,
-      email: data.email,
-      telefono: data.telefono,
-      direccion: data.direccion,
+      nombres: data.nombres.trim(),
+      apellidos: data.apellidos.trim(),
+      email: saved.email,
+      telefono: saved.phone,
+      direccion: saved.address,
       foto_perfil: data.imageUrl,
     });
   };
@@ -61,7 +76,11 @@ export default function ProfilePage() {
           <div className="relative inline-block">
             <div className="w-20 h-20 rounded-full bg-eco-green-light flex items-center justify-center mx-auto mb-4 overflow-hidden">
               {displayProfile.imageUrl ? (
-                <img src={displayProfile.imageUrl} alt="Profile" className="w-full h-full object-cover" />
+                <img
+                  src={displayProfile.imageUrl}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <User className="w-10 h-10 text-primary" />
               )}
@@ -79,7 +98,10 @@ export default function ProfilePage() {
         </header>
 
         {/* User info */}
-        <section className="eco-section animate-fade-up" style={{ animationDelay: "50ms" }}>
+        <section
+          className="eco-section animate-fade-up"
+          style={{ animationDelay: '50ms' }}
+        >
           <h2 className="eco-section-title">Datos personales</h2>
           <div className="eco-card space-y-4">
             <InfoRow icon={Mail} label="Correo" value={displayProfile.email} />
@@ -89,7 +111,10 @@ export default function ProfilePage() {
         </section>
 
         {/* Preferences */}
-        <section className="eco-section animate-fade-up" style={{ animationDelay: "100ms" }}>
+        <section
+          className="eco-section animate-fade-up"
+          style={{ animationDelay: '100ms' }}
+        >
           <h2 className="eco-section-title">Preferencias</h2>
           <div className="eco-card space-y-4">
             <ToggleRow
@@ -110,7 +135,10 @@ export default function ProfilePage() {
         </section>
 
         {/* Support */}
-        <section className="eco-section animate-fade-up" style={{ animationDelay: "150ms" }}>
+        <section
+          className="eco-section animate-fade-up"
+          style={{ animationDelay: '150ms' }}
+        >
           <h2 className="eco-section-title">Soporte</h2>
           <div className="eco-card space-y-1 p-0 overflow-hidden">
             <LinkRow icon={MessageCircle} label="Preguntas frecuentes" to="/faq" />
@@ -118,11 +146,14 @@ export default function ProfilePage() {
         </section>
 
         {/* Legal */}
-        <section className="eco-section animate-fade-up" style={{ animationDelay: "200ms" }}>
+        <section
+          className="eco-section animate-fade-up"
+          style={{ animationDelay: '200ms' }}
+        >
           <h2 className="eco-section-title">Legal</h2>
           <div className="eco-card space-y-1 p-0 overflow-hidden">
             <LinkRow icon={FileText} label="Política de datos" to="/privacy" />
-            
+
             <div className="px-4 py-3 flex items-center justify-between border-t border-border">
               <span className="text-sm text-muted-foreground">Versión</span>
               <span className="text-sm text-muted-foreground">1.0.0</span>
@@ -131,7 +162,10 @@ export default function ProfilePage() {
         </section>
 
         {/* Logout */}
-        <section className="eco-section animate-fade-up" style={{ animationDelay: "250ms" }}>
+        <section
+          className="eco-section animate-fade-up"
+          style={{ animationDelay: '250ms' }}
+        >
           <Button
             onClick={handleLogout}
             variant="ghost"
@@ -144,12 +178,14 @@ export default function ProfilePage() {
       </div>
 
       {/* Edit Profile Modal */}
-      <EditProfileModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        initialData={displayProfile}
-        onSave={handleSaveProfile}
-      />
+      {isEditModalOpen && (
+        <EditProfileModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          initialData={displayProfile}
+          onSave={handleSaveProfile}
+        />
+      )}
     </MobileLayout>
   );
 }
@@ -180,7 +216,13 @@ interface ToggleRowProps {
   onChange: (checked: boolean) => void;
 }
 
-function ToggleRow({ icon: Icon, label, description, checked, onChange }: ToggleRowProps) {
+function ToggleRow({
+  icon: Icon,
+  label,
+  description,
+  checked,
+  onChange,
+}: ToggleRowProps) {
   return (
     <div className="flex items-start gap-3">
       <Icon className="w-5 h-5 text-muted-foreground mt-0.5" />
@@ -193,14 +235,14 @@ function ToggleRow({ icon: Icon, label, description, checked, onChange }: Toggle
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={cn(
-          "relative w-11 h-6 rounded-full transition-colors duration-200",
-          checked ? "bg-primary" : "bg-muted"
+          'relative w-11 h-6 rounded-full transition-colors duration-200',
+          checked ? 'bg-primary' : 'bg-muted',
         )}
       >
         <span
           className={cn(
-            "absolute top-1 w-4 h-4 rounded-full bg-card shadow-sm transition-transform duration-200",
-            checked ? "left-6" : "left-1"
+            'absolute top-1 w-4 h-4 rounded-full bg-card shadow-sm transition-transform duration-200',
+            checked ? 'left-6' : 'left-1',
           )}
         />
       </button>
@@ -216,9 +258,9 @@ interface LinkRowProps {
 
 function LinkRow({ icon: Icon, label, to }: LinkRowProps & { to?: string }) {
   const navigate = useNavigate();
-  
+
   return (
-    <button 
+    <button
       onClick={() => to && navigate(to)}
       className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 transition-colors border-t border-border first:border-t-0"
     >

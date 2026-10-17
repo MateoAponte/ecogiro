@@ -13,3 +13,19 @@ Content-Type: image/jpeg
 
 < {{imagePath}}
 --EcoGiroScanBoundary--
+
+### Verify: replace analysis with the exact data object from Analyze
+POST {{baseUrl}}/scan/verify
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=EcoGiroVerifyBoundary
+
+--EcoGiroVerifyBoundary
+Content-Disposition: form-data; name="analysis"
+
+{"materials":["2 botellas PET con código visible"],"preparation":["1. Enjuaga los envases"],"impact":["Recuperas materia prima"],"environmental_damage":["Pueden dispersar microplásticos"],"weight_estimate":0.045}
+--EcoGiroVerifyBoundary
+Content-Disposition: form-data; name="file"; filename="bottle.jpg"
+Content-Type: image/jpeg
+
+< {{imagePath}}
+--EcoGiroVerifyBoundary--

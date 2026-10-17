@@ -1,7 +1,7 @@
 @baseUrl = http://localhost:3000/api/v1/recovery
 @userId = 7
-@id = 40204db7-7240-4733-a998-aa811bca8636
-@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxNzk0NzYsImV4cCI6MTc5Mjc4NDI3Nn0.vh7S5ugcl5RaaYw2I7CbTmK8y_lx4tLu_fBht9qj-m4
+@id = e2362d46-c71c-4ed6-81cd-c0a26b14f5c8
+@authToken = eeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UgMiIsImlhdCI6MTc5MjE5OTg0NSwiZXhwIjoxNzkyODA0NjQ1fQ.aNyNxdQamH3-nyODbmgSWLV5gOtilxtZ-Kmf-oK7Lxs
 
 ### Create a recovery
 POST {{baseUrl}}

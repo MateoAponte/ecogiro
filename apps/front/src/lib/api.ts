@@ -94,6 +94,7 @@ export interface AuthResult {
 
 function parseAuthResponse(response: LoginApiEnvelope): AuthResult {
   const data = response?.data;
+  // Login and refresh share the same contract: the current profile is data.user.
   const user = data?.user;
   if (
     !user || typeof user.id !== "number" || typeof user.name !== "string" ||

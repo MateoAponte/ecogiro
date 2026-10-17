@@ -1,25 +1,31 @@
-import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from "react";
-import { apiLogin, apiRestoreSession, type LoginResponse } from "@/lib/api";
-import { clearAuthTokens, saveAuthTokens } from "@/lib/auth-session";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useCallback,
+  useRef,
+} from 'react';
+import { apiLogin, apiRestoreSession, type LoginResponse } from '@/lib/api';
+import {
+  clearAuthTokens,
+  saveAuthTokens,
+  getAuthUser,
+  saveAuthUser,
+  type StoredUser,
+} from '@/lib/auth-session';
 
-export type UserRole = "CIUDADANO" | "CENTRO_DE_ACOPIO" | null;
+export type UserRole = 'CIUDADANO' | 'CENTRO_DE_ACOPIO' | null;
 
-interface UserData {
-  email?: string;
-  direccion?: string;
-  foto_perfil?: string;
-  user_id: number;
-  rol: UserRole;
-  nombres: string;
-  apellidos: string;
-  telefono: string;
-  puntos_acumulados: number;
-  nivel_gamificacion: number;
-}
+type UserData = StoredUser;
 
 interface AuthContextType {
   user: UserData | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isAuthenticated: boolean;
   isRestoringSession: boolean;
@@ -32,18 +38,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const POINTS_STORAGE_KEY = "eco_local_points";
+const POINTS_STORAGE_KEY = 'eco_local_points';
 
 const formatRole = (rol: string): UserRole => {
-  if (rol === "1") return "CIUDADANO";
-  if (rol === "2") return "CENTRO_DE_ACOPIO";
-  const normalized = rol.toLowerCase().trim().replace(/_/g, " ");
-  if (normalized === "ciudadano") return "CIUDADANO";
-  if (normalized === "centro de acopio") return "CENTRO_DE_ACOPIO";
+  if (rol === '1') return 'CIUDADANO';
+  if (rol === '2') return 'CENTRO_DE_ACOPIO';
+  const normalized = rol.toLowerCase().trim().replace(/_/g, ' ');
+  if (normalized === 'ciudadano') return 'CIUDADANO';
+  if (normalized === 'centro de acopio') return 'CENTRO_DE_ACOPIO';
   const upper = rol.toUpperCase().trim();
-  if (upper === "CIUDADANO") return "CIUDADANO";
-  if (upper === "CENTRO_DE_ACOPIO") return "CENTRO_DE_ACOPIO";
-  return "CIUDADANO";
+  if (upper === 'CIUDADANO') return 'CIUDADANO';
+  if (upper === 'CENTRO_DE_ACOPIO') return 'CENTRO_DE_ACOPIO';
+  return 'CIUDADANO';
 };
 
 function toUserData(data: LoginResponse): UserData {
@@ -65,12 +71,12 @@ const saveLocalPoints = (points: number) => {
   try {
     localStorage.setItem(POINTS_STORAGE_KEY, points.toString());
   } catch (e) {
-    console.error("Error saving points to storage:", e);
+    console.error('Error saving points to storage:', e);
   }
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserData | null>(null);
+  const [user, setUser] = useState<UserData | null>(getAuthUser);
   const [isRestoringSession, setIsRestoringSession] = useState(true);
   const authAttempt = useRef(0);
   const [localPoints, setLocalPoints] = useState<number>(0);
@@ -83,25 +89,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void apiRestoreSession().then((result) => {
       if (!active || attempt !== authAttempt.current) return;
       if (result.success && result.data) {
-        setUser(toUserData(result.data));
+        // The API adapter maps refresh.data.user to the fields used by the views.
+        const profile = toUserData(result.data);
+        saveAuthUser(profile);
+        setUser(profile);
+      } else {
+        setUser(null);
       }
       setIsRestoringSession(false);
     });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (
+    email: string,
+    password: string,
+  ): Promise<{ success: boolean; error?: string }> => {
     const attempt = ++authAttempt.current;
     const result = await apiLogin(email, password);
 
     if (attempt !== authAttempt.current) return { success: false };
 
     if (!result.success || !result.data || !result.tokens) {
-      return { success: false, error: result.error || "Error al iniciar sesión" };
+      return { success: false, error: result.error || 'Error al iniciar sesión' };
     }
 
     saveAuthTokens(result.tokens);
-    setUser(toUserData(result.data));
+    const profile = toUserData(result.data);
+    saveAuthUser(profile);
+    setUser(profile);
     setIsRestoringSession(false);
     // Load local points after login
     setLocalPoints(getLocalPoints());
@@ -116,31 +134,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateUserPoints = (points: number) => {
-    setUser((prev) => prev ? { ...prev, puntos_acumulados: points } : null);
+    setUser((prev) => {
+      if (!prev) return null;
+      const next = { ...prev, puntos_acumulados: points };
+      saveAuthUser(next);
+      return next;
+    });
   };
 
   const updateUserProfile = (data: Partial<UserData>) => {
-    setUser((previous) => previous ? { ...previous, ...data } : null);
+    setUser((previous) => {
+      if (!previous) return null;
+      const next = { ...previous, ...data };
+      saveAuthUser(next);
+      return next;
+    });
   };
 
   // Add points to local storage (from AI response)
-  const addPoints = useCallback((points: number) => {
-    const newTotal = localPoints + points;
-    setLocalPoints(newTotal);
-    saveLocalPoints(newTotal);
-  }, [localPoints]);
+  const addPoints = useCallback(
+    (points: number) => {
+      const newTotal = localPoints + points;
+      setLocalPoints(newTotal);
+      saveLocalPoints(newTotal);
+    },
+    [localPoints],
+  );
 
   // Deduct points from local storage (for reward redemption)
-  const deductPoints = useCallback((points: number): boolean => {
-    const totalPoints = (user?.puntos_acumulados || 0) + localPoints;
-    if (points > totalPoints) {
-      return false; // Not enough points
-    }
-    const newLocalPoints = localPoints - points;
-    setLocalPoints(newLocalPoints);
-    saveLocalPoints(newLocalPoints);
-    return true;
-  }, [localPoints, user?.puntos_acumulados]);
+  const deductPoints = useCallback(
+    (points: number): boolean => {
+      const totalPoints = (user?.puntos_acumulados || 0) + localPoints;
+      if (points > totalPoints) {
+        return false; // Not enough points
+      }
+      const newLocalPoints = localPoints - points;
+      setLocalPoints(newLocalPoints);
+      saveLocalPoints(newLocalPoints);
+      return true;
+    },
+    [localPoints, user?.puntos_acumulados],
+  );
 
   // Get total points (API + local)
   const getTotalPoints = useCallback((): number => {
@@ -149,18 +183,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user?.puntos_acumulados, localPoints]);
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
-      logout, 
-      isAuthenticated: !!user, 
-      isRestoringSession,
-      updateUserPoints,
-      updateUserProfile,
-      addPoints,
-      deductPoints,
-      getTotalPoints,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        isAuthenticated: !!user,
+        isRestoringSession,
+        updateUserPoints,
+        updateUserProfile,
+        addPoints,
+        deductPoints,
+        getTotalPoints,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -169,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }

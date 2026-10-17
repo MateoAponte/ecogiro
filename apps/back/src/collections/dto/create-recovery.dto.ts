@@ -66,6 +66,7 @@ export class CreateRecoveryDto {
     description: 'comments of recovery',
     example: 'comments',
   })
+  @ValidateIf((_object, value) => value !== undefined)
   @IsString()
   @MinLength(3)
   @MaxLength(255)

@@ -21,7 +21,7 @@ export class AnalyzeResponseDto {
   @IsString({ each: true })
   @MinLength(1, { each: true })
   @MaxLength(500, { each: true })
-  materiales!: string[];
+  materials!: string[];
 
   @ApiProperty({
     type: [String],
@@ -32,7 +32,7 @@ export class AnalyzeResponseDto {
   @IsString({ each: true })
   @MinLength(1, { each: true })
   @MaxLength(500, { each: true })
-  preparacion!: string[];
+  preparation!: string[];
 
   @ApiProperty({ type: [String] })
   @IsArray()
@@ -40,7 +40,7 @@ export class AnalyzeResponseDto {
   @IsString({ each: true })
   @MinLength(1, { each: true })
   @MaxLength(500, { each: true })
-  impacto_inmediato!: string[];
+  impact!: string[];
 
   @ApiProperty({ type: [String] })
   @IsArray()
@@ -48,7 +48,7 @@ export class AnalyzeResponseDto {
   @IsString({ each: true })
   @MinLength(1, { each: true })
   @MaxLength(500, { each: true })
-  daño_ambiental!: string[];
+  environmental_damage!: string[];
 
   @ApiProperty({
     type: Number,
@@ -57,24 +57,24 @@ export class AnalyzeResponseDto {
   })
   @IsNumber({ maxDecimalPlaces: 3 })
   @Min(0.001)
-  peso_estimado!: number;
+  weight_estimate!: number;
 }
 
 // Private model envelope. Invalid images use null weight and empty arrays.
 export class AnalyzeModelOutputDto extends OmitType(AnalyzeResponseDto, [
-  'peso_estimado',
+  'weight_estimate',
 ] as const) {
   @ValidateIf((_object, value) => value !== null)
   @IsNumber({ maxDecimalPlaces: 3 })
   @Min(0)
-  peso_estimado!: number | null;
+  weight_estimate!: number | null;
 
   @IsBoolean()
-  es_plastico!: boolean;
+  is_plastic!: boolean;
 
   @ValidateIf((_object, value) => value !== null)
   @IsString()
   @MinLength(1)
   @MaxLength(300)
-  motivo_invalido!: string | null;
+  reason_invalid!: string | null;
 }

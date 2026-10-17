@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const userSchema = z.object({
   user_id: z.number().int().positive(),
-  rol: z.enum(['CIUDADANO', 'CENTRO_DE_ACOPIO']).nullable(),
+  rol: z.enum(['CIUDADANO', 'RECUPERADOR', 'CENTRO_DE_ACOPIO']).nullable(),
   nombres: z.string(),
   apellidos: z.string(),
   telefono: z.string(),

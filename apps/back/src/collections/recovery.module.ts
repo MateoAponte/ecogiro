@@ -4,10 +4,12 @@ import { Recovery } from './recovery.entity';
 import { RecoveryController } from './recovery.controller';
 import { RecoveryService } from './provider/recovery.service';
 import { RecoveryRepository } from './provider/recovery.repository.service';
+import { RecoveryEventsService } from './events/recovery-events.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Recovery])],
   controllers: [RecoveryController],
-  providers: [RecoveryService, RecoveryRepository],
+  providers: [RecoveryService, RecoveryRepository, RecoveryEventsService],
+  exports: [RecoveryEventsService],
 })
 export class RecoveryModule {}

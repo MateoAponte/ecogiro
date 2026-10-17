@@ -16,7 +16,8 @@ import {
   type StoredUser,
 } from '@/lib/auth-session';
 
-export type UserRole = 'CIUDADANO' | 'CENTRO_DE_ACOPIO' | null;
+import { normalizeRole } from '@/lib/auth-roles';
+export type { UserRole } from '@/lib/auth-roles';
 
 type UserData = StoredUser;
 
@@ -40,20 +41,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const POINTS_STORAGE_KEY = 'eco_local_points';
 
-const formatRole = (rol: string): UserRole => {
-  if (rol === '1') return 'CIUDADANO';
-  if (rol === '2') return 'CENTRO_DE_ACOPIO';
-  const normalized = rol.toLowerCase().trim().replace(/_/g, ' ');
-  if (normalized === 'ciudadano') return 'CIUDADANO';
-  if (normalized === 'centro de acopio') return 'CENTRO_DE_ACOPIO';
-  const upper = rol.toUpperCase().trim();
-  if (upper === 'CIUDADANO') return 'CIUDADANO';
-  if (upper === 'CENTRO_DE_ACOPIO') return 'CENTRO_DE_ACOPIO';
-  return 'CIUDADANO';
-};
-
 function toUserData(data: LoginResponse): UserData {
-  return { ...data, rol: formatRole(data.rol) };
+  return { ...data, rol: normalizeRole(data.rol) };
 }
 
 // Get local points from storage

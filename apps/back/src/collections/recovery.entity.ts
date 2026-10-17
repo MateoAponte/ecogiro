@@ -1,4 +1,11 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Status } from './enums/Status.enum';
 import { User } from 'src/user/user.entity';
 
@@ -42,4 +49,12 @@ export class Recovery {
 
   @ManyToOne(() => User, (user) => user.recoveries, { onDelete: 'CASCADE' })
   user_id!: number;
+
+  @Index()
+  @Column({ type: 'int', nullable: true })
+  agent_id!: number | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'agent_id' })
+  agent!: User | null;
 }

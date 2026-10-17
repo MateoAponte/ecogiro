@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 const bundle = await build({
   stdin: {
-    contents: 'export * from "../src/lib/api"; export * from "../src/lib/auth-session";',
+    contents:
+      'export * from "../src/lib/api"; export * from "../src/lib/auth-session"; export * from "../src/lib/auth-roles";',
     resolveDir: fileURLToPath(new URL('.', import.meta.url)),
     loader: 'ts',
   },
@@ -48,6 +49,23 @@ const profile = {
   puntos_acumulados: 100,
   nivel_gamificacion: 1,
 };
+
+test('role 2 is a recuperador and has a separate landing route', async () => {
+  const api = await load();
+  for (const role of ['2', 'RECOVERY', 'RECUPERADOR']) {
+    assert.equal(api.normalizeRole(role), 'RECUPERADOR');
+    assert.equal(api.roleHome(api.normalizeRole(role)), '/agent');
+  }
+  assert.equal(api.roleHome(api.normalizeRole('CENTRO_DE_ACOPIO')), '/campaigns');
+  assert.equal(api.roleHome(api.normalizeRole('1')), '/');
+});
+
+test('a recuperador profile survives session storage reload', async () => {
+  const api = await load();
+  api.saveAuthTokens(tokens);
+  api.saveAuthUser({ ...profile, rol: 'RECUPERADOR' });
+  assert.equal((await load()).getAuthUser().rol, 'RECUPERADOR');
+});
 
 test('profile and user_id survive a reload with the session tokens', async () => {
   const first = await load();

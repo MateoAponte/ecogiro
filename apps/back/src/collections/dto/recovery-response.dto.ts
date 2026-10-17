@@ -8,56 +8,64 @@ export class RecoveryResponseDto {
     example: 12.5,
     description: 'Actual recycled weight in kilograms',
   })
-  recycled_kg: number;
+  recycled_kg!: number;
 
   @ApiProperty({
     example: 'uuid',
     description: 'Recovery UUID by Recovery',
     type: 'string',
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({
     example: '2022-01-01T00:00:00.000Z',
     description: 'scheduled date to recovery',
     type: 'string',
   })
-  scheduled_date: Date;
+  scheduled_date!: Date;
 
   @ApiProperty({
     example: 'description',
     description: 'description of recovery',
     type: 'string',
   })
-  description: string;
+  description!: string;
 
   @ApiProperty({
     example: 'address',
     description: 'address of recovery',
     type: 'string',
   })
-  address: string;
+  address!: string;
 
   @ApiPropertyOptional({
     example: 'comments',
     description: 'comments about the recovery',
     type: 'string',
   })
-  comments: string;
+  comments!: string;
 
   @ApiProperty({
     example: 1,
     description: 'status of recovery',
     type: 'number',
   })
-  status: Status;
+  status!: Status;
 
   @ApiProperty({
     example: 1,
     description: 'User ID',
     type: 'number',
   })
-  user_id: number;
+  user_id!: number;
+
+  @ApiPropertyOptional({
+    example: 8,
+    description: 'Assigned recovery agent ID, or null when unassigned',
+    type: Number,
+    nullable: true,
+  })
+  agent_id!: number | null;
 
   static fromEntity(recovery: Recovery): RecoveryResponseDto {
     const dto = new RecoveryResponseDto();
@@ -69,6 +77,7 @@ export class RecoveryResponseDto {
     dto.comments = recovery.comments;
     dto.status = recovery.status;
     dto.user_id = recovery.user_id;
+    dto.agent_id = recovery.agent_id ?? null;
     return dto;
   }
 }

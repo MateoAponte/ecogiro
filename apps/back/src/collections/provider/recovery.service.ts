@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -13,6 +14,7 @@ import { Status } from '../enums/Status.enum';
 import { Rol } from '../../user/enums/Rol';
 import { RecoveryEventsService } from '../events/recovery-events.service';
 import { RecoveryAcceptedEvent } from '../events/recovery-accepted.event';
+import { PaginationDto } from '../dto/pagination.dto';
 
 @Injectable()
 export class RecoveryService {
@@ -32,11 +34,47 @@ export class RecoveryService {
     return RecoveryResponseDto.fromEntity(recovery);
   }
 
-  async findAllByUserId(user_id: number): Promise<RecoveryResponseDto[]> {
-    const recoveries = await this.recoveryRepository.findAllByUserId(user_id);
+  async findAllByUserId(
+    user_id: number,
+    pagination: PaginationDto = {},
+  ): Promise<RecoveryResponseDto[]> {
+    this.validatePagination(pagination);
+    const recoveries = await this.recoveryRepository.findAllByUserId(
+      user_id,
+      pagination,
+    );
     return recoveries.map((recovery) =>
       RecoveryResponseDto.fromEntity(recovery),
     );
+  }
+
+  async findAll(
+    pagination: PaginationDto = {},
+  ): Promise<RecoveryResponseDto[]> {
+    this.validatePagination(pagination);
+    const recoveries = await this.recoveryRepository.findAll(pagination);
+    return recoveries.map((recovery) =>
+      RecoveryResponseDto.fromEntity(recovery),
+    );
+  }
+
+  private validatePagination(pagination: PaginationDto): void {
+    if (
+      pagination.dateFrom &&
+      pagination.dateTo &&
+      pagination.dateFrom > pagination.dateTo
+    ) {
+      throw new BadRequestException(
+        'dateFrom must be less than or equal to dateTo',
+      );
+    }
+    if (
+      !Number.isSafeInteger(
+        ((pagination.page ?? 1) - 1) * (pagination.limit ?? 20),
+      )
+    ) {
+      throw new BadRequestException('Pagination offset is too large');
+    }
   }
 
   async findByRecoveryId(id: string): Promise<RecoveryResponseDto> {

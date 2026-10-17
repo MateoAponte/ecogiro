@@ -18,8 +18,20 @@ Authorization: Bearer {{authToken}}
 }
 
 ### List by user
-GET {{baseUrl}}?user_id={{userId}}
+GET {{baseUrl}}?user_id={{userId}}&page=1&limit=20
 Authorization: Bearer {{authToken}}
+
+### List all recoveries (requires a recovery agent or administrator token)
+GET {{baseUrl}}/all?page=1&limit=20
+Authorization: Bearer {{agentToken}}
+
+### Filter by user, status and inclusive scheduled date range
+GET {{baseUrl}}?user_id={{userId}}&page=1&limit=10&status=0&dateFrom=2026-10-01T00:00:00.000Z&dateTo=2026-10-31T23:59:59.999Z
+Authorization: Bearer {{authToken}}
+
+### Filter all recoveries by status
+GET {{baseUrl}}/all?page=1&limit=10&status=1
+Authorization: Bearer {{agentToken}}
 
 ### Find by recovery ID
 GET {{baseUrl}}/{{id}}

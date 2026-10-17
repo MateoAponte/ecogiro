@@ -3,11 +3,11 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -30,6 +30,8 @@ import { UpdateRecoveryDto } from './dto/udpate-recovery.dto';
 import { RecoveryResponseDto } from './dto/recovery-response.dto';
 import { RecoveryService } from './provider/recovery.service';
 import { Rol } from 'src/user/enums';
+import { PaginationDto } from './dto/pagination.dto';
+import { FindRecoveriesByUserDto } from './dto/find-recoveries-by-user.dto';
 
 const recoveryIdPipe = new ParseUUIDPipe({
   version: '4',
@@ -62,10 +64,32 @@ export class RecoveryController {
 
   @HttpCode(HttpStatus.OK)
   @Get()
+  @ApiOperation({
+    summary: 'List recoveries for a user with pagination and filters',
+  })
+  @ApiOkResponse({ type: RecoveryResponseDto, isArray: true })
   findAllByUserId(
-    @Query('user_id', ParseIntPipe) user_id: number,
+    @Query() query: FindRecoveriesByUserDto,
   ): Promise<RecoveryResponseDto[]> {
-    return this.recoveryService.findAllByUserId(user_id);
+    const { user_id, ...pagination } = query;
+    return this.recoveryService.findAllByUserId(user_id, pagination);
+  }
+
+  @Get('all')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'List all recoveries with pagination and filters' })
+  @ApiOkResponse({ type: RecoveryResponseDto, isArray: true })
+  findAll(
+    @Query() pagination: PaginationDto,
+    @Req() request: IAuthRequest,
+  ): Promise<RecoveryResponseDto[]> {
+    if (request.user?.rol !== Rol.RECOVERY && request.user?.rol !== Rol.ADMIN) {
+      throw new ForbiddenException(
+        'Only recovery agents or administrators can list all recoveries',
+      );
+    }
+    return this.recoveryService.findAll(pagination);
   }
 
   @HttpCode(HttpStatus.OK)

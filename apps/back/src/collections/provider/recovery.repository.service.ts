@@ -1,10 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Recovery } from '../recovery.entity';
-import { In, IsNull, Repository } from 'typeorm';
+import {
+  Between,
+  FindOptionsWhere,
+  In,
+  IsNull,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { CreateRecoveryDto } from '../dto/create-recovery.dto';
 import { UpdateRecoveryDto } from '../dto/udpate-recovery.dto';
 import { Status } from '../enums/Status.enum';
+import { PaginationDto } from '../dto/pagination.dto';
 
 @Injectable()
 export class RecoveryRepository {
@@ -20,11 +29,35 @@ export class RecoveryRepository {
     return this.repository.save(recovery);
   }
 
-  async findAllByUserId(user_id: number): Promise<Recovery[]> {
+  findAllByUserId(
+    user_id: number,
+    pagination: PaginationDto = {},
+  ): Promise<Recovery[]> {
+    return this.findWithFilters(pagination, user_id);
+  }
+
+  findAll(pagination: PaginationDto = {}): Promise<Recovery[]> {
+    return this.findWithFilters(pagination);
+  }
+
+  private findWithFilters(
+    pagination: PaginationDto,
+    userId?: number,
+  ): Promise<Recovery[]> {
+    const { dateFrom, dateTo, status, page = 1, limit = 20 } = pagination;
+    const where: FindOptionsWhere<Recovery> = {};
+    if (userId !== undefined) where.user_id = userId;
+    if (status !== undefined) where.status = status;
+    if (dateFrom && dateTo) where.scheduled_date = Between(dateFrom, dateTo);
+    else if (dateFrom) where.scheduled_date = MoreThanOrEqual(dateFrom);
+    else if (dateTo) where.scheduled_date = LessThanOrEqual(dateTo);
+
     return this.repository.find({
-      where: { user_id },
-      relations: ['user_id'],
-      order: { scheduled_date: 'ASC' },
+      where,
+      loadRelationIds: { relations: ['user_id'] },
+      order: { scheduled_date: 'ASC', id: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
   }
 

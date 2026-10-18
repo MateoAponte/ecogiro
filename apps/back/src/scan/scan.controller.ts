@@ -1,5 +1,7 @@
 import {
   Controller,
+  Req,
+  ParseUUIDPipe,
   Body,
   HttpCode,
   HttpStatus,
@@ -24,13 +26,59 @@ import { MAX_SCAN_IMAGE_BYTES, ScanImagePipe } from './pipes/scan-image.pipe';
 import type { ScanImageFile } from './pipes/scan-image.pipe';
 import { ScanService } from './scan.service';
 import { ScanAnalysisPipe } from './pipes/scan-analysis.pipe';
+import { ScanAchievedProvider } from './providers/scan-achieved.provider';
+import type { IAuthRequest } from '../auth/interfaces/IAuthRequest';
 
 @Controller('scan')
 @ApiTags('scan')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 export class ScanController {
-  constructor(private readonly service: ScanService) {}
+  constructor(
+    private readonly service: ScanService,
+    private readonly achievedProvider: ScanAchievedProvider,
+  ) {}
+
+  @Post('achieved')
+  @HttpCode(HttpStatus.OK)
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary:
+      'Verify a collection photo and issue a temporary completion receipt',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'recovery_id'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        recovery_id: { type: 'string', format: 'uuid' },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: MAX_SCAN_IMAGE_BYTES,
+        files: 1,
+        fields: 1,
+        fieldSize: 100,
+      },
+    }),
+  )
+  achieved(
+    @UploadedFile(ScanImagePipe) file: ScanImageFile,
+    @Body('recovery_id', new ParseUUIDPipe({ version: '4' }))
+    recoveryId: string,
+    @Req() request: IAuthRequest,
+  ) {
+    return this.achievedProvider.achieved(
+      file,
+      recoveryId,
+      request.user.id!,
+      request.user.rol!,
+    );
+  }
 
   @Post('verify')
   @HttpCode(HttpStatus.OK)

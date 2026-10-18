@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -88,6 +88,9 @@ export default function CollectionDetailPage() {
   const { deleteReport } = useReports();
   const { user, isRestoringSession } = useAuth();
   const userId = user?.user_id;
+  const isAgent = user?.rol === 'RECUPERADOR';
+  const listPath = isAgent ? '/agent/accepted' : '/collections';
+  const queryClient = useQueryClient();
   const detailKey = ['recovery', userId, id] as const;
   const {
     data: report,
@@ -96,7 +99,7 @@ export default function CollectionDetailPage() {
     refetch,
   } = useQuery({
     queryKey: detailKey,
-    queryFn: ({ signal }) => apiGetRecoveryById(id!, userId!, signal),
+    queryFn: ({ signal }) => apiGetRecoveryById(id!, userId!, signal, isAgent),
     enabled: !isRestoringSession && !!userId && !!id,
     refetchOnMount: 'always',
     refetchOnWindowFocus: false,
@@ -156,7 +159,7 @@ export default function CollectionDetailPage() {
           <header className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => navigate('/collections')}
+              onClick={() => navigate(listPath)}
               aria-label="Volver a recolecciones"
               className="p-2 -ml-2 rounded-xl hover:bg-muted"
             >
@@ -217,6 +220,8 @@ export default function CollectionDetailPage() {
   const statusKey = report.rre_estado?.toUpperCase() || 'EN_ESPERA';
   const status = statusConfig[statusKey] || statusConfig.EN_ESPERA;
   const formattedDate = formatDateToSpanish(report.rre_fecha_reporte);
+  const isAccepted = statusKey === 'ACEPTADO';
+  const canEdit = ['EN_ESPERA', 'ACEPTADO'].includes(statusKey);
   const isCollected = statusKey === 'RECOGIDO';
 
   const handleDeleteReport = async () => {
@@ -225,11 +230,15 @@ export default function CollectionDetailPage() {
     setIsDeleting(true);
     try {
       await apiRemoveRecovery(String(report.rre_id));
-      deleteReport(report.rre_id);
+      if (isAgent) {
+        await queryClient.invalidateQueries({ queryKey: ['agent-recoveries', userId] });
+      } else {
+        deleteReport(report.rre_id);
+      }
       // Keep the mounted detail query until navigation unmounts it. Removing an
       // observed query here makes React Query recreate it and issue another GET.
-      toast.success('Recolección eliminada');
-      navigate('/collections', { replace: true });
+      toast.success(isAccepted ? 'Recolección cancelada' : 'Recolección eliminada');
+      navigate(listPath, { replace: true });
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : 'No se pudo eliminar la recolección.',
@@ -325,7 +334,7 @@ export default function CollectionDetailPage() {
         </section>
 
         {/* Comment Section - Only for pending/assigned */}
-        {!isCollected && (
+        {canEdit && !isAgent && (
           <section
             className="eco-card space-y-3 animate-fade-up"
             style={{ animationDelay: '100ms' }}
@@ -356,13 +365,35 @@ export default function CollectionDetailPage() {
               className="w-full py-3 text-destructive font-medium hover:bg-destructive/10 rounded-xl transition-colors disabled:opacity-50"
               style={{ fontSize: '14px' }}
             >
-              {isDeleting ? 'Eliminando...' : 'Eliminar recolección'}
+              {isDeleting
+                ? isAccepted
+                  ? 'Cancelando...'
+                  : 'Eliminando...'
+                : isAccepted
+                  ? 'Cancelar recolección'
+                  : 'Eliminar recolección'}
             </button>
           </section>
         )}
 
         {/* Rating & Tip Section - Only for collected */}
-        {isCollected && (
+        {isAgent && isAccepted && (
+          <Button
+            variant="destructive"
+            className="w-full"
+            disabled={isDeleting}
+            onClick={handleDeleteReport}
+          >
+            {isDeleting ? 'Cancelando...' : 'Cancelar recolección'}
+          </Button>
+        )}
+        {isAgent && report.comments && (
+          <section className="eco-card space-y-2">
+            <h2 className="font-display font-semibold">Comentario del ciudadano</h2>
+            <p className="text-sm text-muted-foreground">{report.comments}</p>
+          </section>
+        )}
+        {isCollected && !isAgent && (
           <>
             {/* Star Rating */}
             <section

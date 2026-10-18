@@ -204,6 +204,14 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/agent/recoveries/:id"
+          element={
+            <ProtectedRoute allowedRoles={['RECUPERADOR']}>
+              <CollectionDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/agent/profile"
           element={
             <ProtectedRoute allowedRoles={['RECUPERADOR']}>

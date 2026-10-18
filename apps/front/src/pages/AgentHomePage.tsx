@@ -18,8 +18,10 @@ import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { CompleteRecoveryModal } from '@/components/collections/CompleteRecoveryModal';
 import {
   apiAcceptRecovery,
+  apiRemoveRecovery,
   apiGetAcceptedRecoveries,
   apiGetAvailableRecoveries,
 } from '@/lib/recoveries-api';
@@ -32,6 +34,7 @@ export default function AgentHomePage({
   const { user } = useAuth();
   const userId = user?.user_id;
   const [page, setPage] = useState(1);
+  const [completingId, setCompletingId] = useState<string | null>(null);
   const accepting = useRef(false);
   const accepted = mode === 'accepted';
   const client = useQueryClient();
@@ -50,6 +53,21 @@ export default function AgentHomePage({
     mutationFn: (id: string) => apiAcceptRecovery(id, userId!),
     onSuccess: () => {
       toast.success('Recuperación aceptada. Ya aparece en Aceptadas.');
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+    onSettled: async () => {
+      accepting.current = false;
+      await client.invalidateQueries({ queryKey: ['agent-recoveries', userId] });
+    },
+    retry: false,
+  });
+
+  const cancel = useMutation({
+    mutationFn: apiRemoveRecovery,
+    onSuccess: () => {
+      toast.success('Recolección cancelada');
     },
     onError: (error) => {
       toast.error(error.message);
@@ -85,7 +103,7 @@ export default function AgentHomePage({
           <Button
             variant="outline"
             size="sm"
-            disabled={query.isFetching || accept.isPending}
+            disabled={query.isFetching || accept.isPending || cancel.isPending}
             onClick={() => void query.refetch()}
             className="gap-2 rounded-full"
           >
@@ -158,7 +176,31 @@ export default function AgentHomePage({
                   <p className="break-words">{recovery.comments}</p>
                 </div>
               )}
-              {!accepted && (
+              {accepted && (
+                <Button
+                  className="w-full"
+                  disabled={cancel.isPending}
+                  onClick={() => setCompletingId(recovery.id)}
+                >
+                  Completar recolección
+                </Button>
+              )}
+              {accepted ? (
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  disabled={cancel.isPending}
+                  onClick={() => {
+                    if (accepting.current) return;
+                    accepting.current = true;
+                    cancel.mutate(recovery.id);
+                  }}
+                >
+                  {cancel.isPending && cancel.variables === recovery.id
+                    ? 'Cancelando...'
+                    : 'Cancelar recolección'}
+                </Button>
+              ) : (
                 <Button
                   className="w-full gap-2"
                   disabled={accept.isPending}
@@ -202,6 +244,20 @@ export default function AgentHomePage({
           </div>
         )}
       </div>
+      {completingId && (
+        <CompleteRecoveryModal
+          recoveryId={completingId}
+          onClose={() => setCompletingId(null)}
+          onCompleted={() => {
+            setCompletingId(null);
+            toast.success('Recolección completada');
+            void client.invalidateQueries({ queryKey: ['agent-recoveries', userId] });
+            void client.invalidateQueries({
+              queryKey: ['recovery', userId, completingId],
+            });
+          }}
+        />
+      )}
     </MobileLayout>
   );
 }

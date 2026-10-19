@@ -9,6 +9,7 @@
 // Toggle this to switch non-authentication endpoints between mock and real APIs
 import {
   getAuthTokens, getSessionVersion, saveAuthTokens, clearAuthTokens,
+  flushAuthStorage,
   type AuthTokens,
 } from "./auth-session";
 
@@ -136,19 +137,29 @@ export function apiRestoreSession(): Promise<AuthResult> {
         headers: { Authorization: `Bearer ${tokens.refreshToken}` },
         signal: AbortSignal.timeout(15000),
       });
-      if (!response.ok) throw new Error("Session refresh failed");
+      if (!response.ok) {
+        if ([401, 403].includes(response.status) && getSessionVersion() === sessionVersion) {
+          clearAuthTokens();
+          await flushAuthStorage();
+        }
+        throw new Error("Session refresh failed");
+      }
       const result = parseAuthResponse(await response.json());
       // A pending refresh must not restore a session after logout or a new login.
       if (getSessionVersion() !== sessionVersion) return { success: false };
       if (!result.success || !result.tokens) {
         clearAuthTokens();
+        await flushAuthStorage();
         return result;
       }
       saveAuthTokens(result.tokens);
+      const persistedVersion = getSessionVersion();
+      await flushAuthStorage();
+      if (getSessionVersion() !== persistedVersion) return { success: false };
       return result;
     } catch {
-      if (getSessionVersion() === sessionVersion) clearAuthTokens();
-      return { success: false, error: "La sesión expiró. Inicia sesión nuevamente." };
+      // Connectivity/provider failures must not erase a valid persisted refresh token.
+      return { success: false, error: "No se pudo restaurar la sesión. Revisa la conexión e intenta nuevamente." };
     } finally {
       refreshRequest = null;
     }

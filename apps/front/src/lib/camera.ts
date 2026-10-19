@@ -1,5 +1,26 @@
 import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera';
-import { isNative, isPluginAvailable } from './platform';
+import { isIOS, isPluginAvailable } from './platform';
+
+let cameraError: string | null = null;
+export const getCameraError = (): string | null => cameraError;
+
+async function requestIOSPermission(kind: 'camera' | 'photos'): Promise<void> {
+  if (!isIOS()) return;
+  let permissions = await Camera.checkPermissions();
+  if (permissions[kind] === 'prompt' || permissions[kind] === 'prompt-with-rationale') {
+    permissions = await Camera.requestPermissions({ permissions: [kind] });
+  }
+  if (
+    permissions[kind] !== 'granted' &&
+    !(kind === 'photos' && permissions.photos === 'limited')
+  ) {
+    throw new Error(
+      kind === 'camera'
+        ? 'Permite el acceso a la cámara en los ajustes del teléfono.'
+        : 'Permite el acceso a las fotos en los ajustes del teléfono.',
+    );
+  }
+}
 
 /**
  * Camera utilities that work across web and native platforms
@@ -23,16 +44,10 @@ export const isCameraAvailable = (): boolean => {
  * Returns a data URL of the captured image
  */
 export const takePhoto = async (): Promise<CapturedImage | null> => {
+  cameraError = null;
   try {
-    // Check camera permissions first
-    const permissions = await Camera.checkPermissions();
-    
-    if (permissions.camera !== 'granted') {
-      const requested = await Camera.requestPermissions();
-      if (requested.camera !== 'granted') {
-        throw new Error('Camera permission denied');
-      }
-    }
+    // Android delegates to the system camera; no storage/gallery access is needed.
+    await requestIOSPermission('camera');
 
     const photo: Photo = await Camera.getPhoto({
       quality: 80,
@@ -42,6 +57,7 @@ export const takePhoto = async (): Promise<CapturedImage | null> => {
       width: 1280,
       height: 720,
       correctOrientation: true,
+      saveToGallery: false,
     });
 
     if (!photo.dataUrl) {
@@ -54,7 +70,10 @@ export const takePhoto = async (): Promise<CapturedImage | null> => {
       webPath: photo.webPath,
     };
   } catch (error) {
-    console.error('Error taking photo:', error);
+    cameraError =
+      error instanceof Error
+        ? error.message
+        : 'No se pudo abrir la cámara. Revisa sus permisos en los ajustes del teléfono.';
     return null;
   }
 };
@@ -63,15 +82,10 @@ export const takePhoto = async (): Promise<CapturedImage | null> => {
  * Pick an image from the gallery
  */
 export const pickFromGallery = async (): Promise<CapturedImage | null> => {
+  cameraError = null;
   try {
-    const permissions = await Camera.checkPermissions();
-    
-    if (permissions.photos !== 'granted') {
-      const requested = await Camera.requestPermissions();
-      if (requested.photos !== 'granted') {
-        throw new Error('Photo library permission denied');
-      }
-    }
+    // Android Photo Picker grants access only to the selected image.
+    await requestIOSPermission('photos');
 
     const photo: Photo = await Camera.getPhoto({
       quality: 80,
@@ -80,6 +94,7 @@ export const pickFromGallery = async (): Promise<CapturedImage | null> => {
       source: CameraSource.Photos,
       width: 1280,
       height: 720,
+      saveToGallery: false,
     });
 
     if (!photo.dataUrl) {
@@ -92,7 +107,10 @@ export const pickFromGallery = async (): Promise<CapturedImage | null> => {
       webPath: photo.webPath,
     };
   } catch (error) {
-    console.error('Error picking photo:', error);
+    cameraError =
+      error instanceof Error
+        ? error.message
+        : 'No se pudo abrir la galería. Revisa los permisos en los ajustes del teléfono.';
     return null;
   }
 };

@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  readSession,
+  writeSession,
+  readLegacySession,
+  clearLegacySession,
+} from './session-storage';
 
 const userSchema = z.object({
   user_id: z.number().int().positive(),
@@ -13,88 +19,105 @@ const userSchema = z.object({
   foto_perfil: z.string().optional(),
 });
 export type StoredUser = z.infer<typeof userSchema>;
-const USER_STORAGE_KEY = 'eco_auth_user';
-let memoryUser: StoredUser | null = null;
 
-export function saveAuthUser(user: StoredUser): void {
-  memoryUser = userSchema.parse(user);
-  try {
-    sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(memoryUser));
-  } catch {
-    /* Memory fallback. */
-  }
-}
-
-export function getAuthUser(): StoredUser | null {
-  if (!getAuthTokens()) return null;
-  if (memoryUser) return memoryUser;
-  try {
-    const parsed = userSchema.safeParse(
-      JSON.parse(sessionStorage.getItem(USER_STORAGE_KEY) ?? 'null'),
-    );
-    if (parsed.success) memoryUser = parsed.data;
-    else sessionStorage.removeItem(USER_STORAGE_KEY);
-  } catch {
-    /* Missing, corrupt or unavailable storage. */
-  }
-  return memoryUser;
-}
-
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-}
-
-const STORAGE_KEY = 'eco_auth_tokens';
+const tokensSchema = z.object({
+  accessToken: z.string().min(1),
+  refreshToken: z.string().min(1),
+});
+export type AuthTokens = z.infer<typeof tokensSchema>;
+const sessionSchema = z.object({ tokens: tokensSchema, user: userSchema.nullable() });
 let memoryTokens: AuthTokens | null = null;
+let memoryUser: StoredUser | null = null;
 let version = 0;
+let initialization: Promise<void> | null = null;
+let pendingWrite: Promise<void> = Promise.resolve();
+let persistenceError: unknown = null;
+
+// Serialize native writes: an older save cannot finish after logout and resurrect a session.
+function persist(): void {
+  const snapshot = memoryTokens
+    ? JSON.stringify({ tokens: memoryTokens, user: memoryUser })
+    : null;
+  pendingWrite = pendingWrite.then(async () => {
+    try {
+      await writeSession(snapshot);
+      clearLegacySession();
+      persistenceError = null;
+    } catch (error) {
+      persistenceError = error;
+    }
+  });
+}
+
+export async function flushAuthStorage(): Promise<void> {
+  await pendingWrite;
+  if (persistenceError)
+    throw new Error(
+      'No se pudo guardar o borrar la sesión en este dispositivo. Intenta nuevamente.',
+    );
+}
+
+export function initializeAuthSession(): Promise<void> {
+  if (initialization) return initialization;
+  const initialVersion = version;
+  initialization = (async () => {
+    const saved = await readSession();
+    let value: unknown = null;
+    try {
+      value = saved === null ? readLegacySession() : JSON.parse(saved);
+    } catch {
+      /* Discard corrupt JSON. */
+    }
+    // A valid token pair may survive a missing/corrupt cached profile: refresh supplies it.
+    const raw = value as { tokens?: unknown; user?: unknown } | null;
+    const tokens = tokensSchema.safeParse(raw?.tokens);
+    const user = userSchema.safeParse(raw?.user);
+    if (version !== initialVersion) return;
+    if (tokens.success) {
+      memoryTokens = tokens.data;
+      memoryUser = user.success ? user.data : null;
+      if (saved === null || !sessionSchema.safeParse(value).success) {
+        persist();
+        await flushAuthStorage();
+      } else clearLegacySession();
+    } else if (saved !== null || value !== null) {
+      memoryTokens = null;
+      memoryUser = null;
+      persist();
+      await flushAuthStorage();
+    }
+  })().catch((error: unknown) => {
+    initialization = null;
+    throw error;
+  });
+  return initialization;
+}
 
 export function getSessionVersion(): number {
   return version;
 }
-
 export function getAuthTokens(): AuthTokens | null {
-  if (memoryTokens) return memoryTokens;
-  try {
-    const value: unknown = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? 'null');
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      'accessToken' in value &&
-      typeof value.accessToken === 'string' &&
-      value.accessToken &&
-      'refreshToken' in value &&
-      typeof value.refreshToken === 'string' &&
-      value.refreshToken
-    ) {
-      memoryTokens = { accessToken: value.accessToken, refreshToken: value.refreshToken };
-    } else {
-      sessionStorage.removeItem(STORAGE_KEY);
-    }
-  } catch {
-    // Storage may be unavailable. The session can still work in memory.
-  }
   return memoryTokens;
+}
+export function getAuthUser(): StoredUser | null {
+  return memoryTokens ? memoryUser : null;
 }
 
 export function saveAuthTokens(tokens: AuthTokens): void {
-  memoryTokens = tokens;
+  memoryTokens = tokensSchema.parse(tokens);
   version += 1;
-  try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
-  } catch {
-    /* Keep the session in memory if browser storage is unavailable. */
-  }
+  persist();
+}
+
+export function saveAuthUser(user: StoredUser): void {
+  memoryUser = userSchema.parse(user);
+  persist();
 }
 
 export function clearAuthTokens(): void {
   memoryTokens = null;
   memoryUser = null;
   version += 1;
-  try {
-    sessionStorage.removeItem(STORAGE_KEY);
-    sessionStorage.removeItem(USER_STORAGE_KEY);
-  } catch {
-    /* Storage may be unavailable. */
-  }
+  clearLegacySession();
+  persist();
 }

@@ -2,6 +2,41 @@
 
 Esta guía explica cómo compilar la app como aplicación nativa para Android e iOS.
 
+## Persistencia de sesión
+
+La sesión se guarda como `eco_auth_session`, con access token, refresh token y
+perfil del usuario. No se guarda la contraseña.
+
+- Web: `localStorage`, que conserva la sesión al cerrar y abrir el navegador.
+- Android/iOS: `@aparajita/capacitor-secure-storage` 8, que cifra los datos mediante
+  Android Keystore / iOS Keychain. No usa el almacenamiento web como alternativa
+  si falla el plugin nativo.
+
+El arranque espera la lectura del almacenamiento antes de renderizar la app.
+Después valida la sesión con `/auth/refresh` y obtiene el perfil de `data.user`.
+Al volver a primer plano o recuperar la conexión se intenta refrescar sin desmontar
+la vista. Una falla de red no elimina los tokens; un rechazo 401/403 del refresh sí.
+Cerrar sesión espera que se borre la sesión persistida antes de confirmar la salida.
+
+Las antiguas claves `eco_auth_tokens` y `eco_auth_user` de `sessionStorage` o
+`localStorage` se migran automáticamente y se eliminan después de guardar.
+Esta persistencia no extiende la caducidad del refresh token definida por el backend.
+
+Después de instalar dependencias y generar la plataforma Android, ejecutar desde
+`apps/front`:
+
+```bash
+npm run build
+npx cap sync android
+```
+
+Comprobación manual: iniciar sesión, cerrar completamente la app, volver a abrirla
+y comprobar el refresh y el perfil. Después cerrar sesión y volver a abrir: debe
+mostrar el login. Repetir con una interrupción temporal de red y recuperarla.
+
+En web los tokens de `localStorage` son accesibles a JavaScript; para una futura
+autenticación basada en cookies HttpOnly sería necesario adaptar también el backend.
+
 ## 📱 Configuración de Íconos y Splash Screen
 
 ### Requisitos de Assets
@@ -225,8 +260,7 @@ npm install @capacitor/device
 # Haptic feedback (vibración)
 npm install @capacitor/haptics
 
-# Push notifications
-npm install @capacitor/push-notifications
+# Las notificaciones locales ya están instaladas; no requieren Firebase.
 
 # Compartir contenido
 npm install @capacitor/share
@@ -295,13 +329,41 @@ cd ..
 npx cap sync android
 ```
 
-### La cámara no funciona en Android
-Verifica que los permisos estén en `android/app/src/main/AndroidManifest.xml`:
-```xml
-<uses-permission android:name="android.permission.CAMERA" />
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-```
+### Cámara y galería en móvil
+La app usa la cámara del sistema y Android Photo Picker con `saveToGallery: false`.
+Este flujo no requiere permisos generales de almacenamiento ni declarar CAMERA
+en Android. No agregues READ/WRITE_EXTERNAL_STORAGE para tomar una foto o elegirla.
+En iOS se solicita solo el permiso correspondiente a la acción; el acceso limitado
+a fotos también se acepta. Configura NSCameraUsageDescription,
+NSPhotoLibraryUsageDescription y NSPhotoLibraryAddUsageDescription en Info.plist
+con explicaciones en español antes de compilar iOS.
+
+Los errores de acceso se muestran tanto en Scan como en Completar recolección.
+Si Android termina la app mientras está abierta la actividad de cámara, esta beta
+requiere iniciar otra captura; aún no implementa recuperación con appRestoredResult.
+
+### Notificaciones locales (sin Firebase)
+Web conserva los toast. En Android/iOS se usa `@capacitor/local-notifications`:
+al iniciar sesión se solicita el permiso de notificaciones si el sistema lo permite.
+Cada evento nuevo recibido por SSE genera una notificación inmediata del teléfono.
+Al tocarla se marca como leída y abre el detalle, comprobando su destinatario.
+Al cerrar sesión se eliminan las notificaciones del dispositivo.
+
+Si el permiso está denegado, se conserva la campana y se muestra un toast como
+alternativa. Se puede habilitar el permiso desde los ajustes del sistema.
+No se necesitan Firebase, google-services.json ni permisos de alarmas exactas.
+Con la app cerrada o suspendida por Android no se reciben eventos SSE: al volver
+a abrirla se actualiza el historial, sin convertirlo en notificaciones nuevas.
+Para avisos remotos con la app cerrada sí haría falta push en una fase posterior.
+
+### Área segura del menú inferior
+El navbar usa `safe-area-inset-bottom/left/right` y el contenido reserva su altura
+más el inset inferior. `SystemBars.insetsHandling: native` deja que Capacitor
+compense WebViews antiguos y que los recientes expongan las áreas seguras CSS.
+Prueba navegación por gestos y por tres botones, y orientación horizontal.
+
+Después de instalar los plugins, ejecutar `npm run build` y `npx cap sync android`
+desde apps/front. La plataforma Android debe haberse generado previamente.
 
 ### Hot-reload no funciona
 1. Asegúrate de que el dispositivo esté en la misma red WiFi

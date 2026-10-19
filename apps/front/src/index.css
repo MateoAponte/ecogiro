@@ -234,6 +234,27 @@
   }
 }
 
+/* SystemBars handles older Android WebViews natively; modern ones expose env(). */
+:root {
+  --eco-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --eco-safe-left: env(safe-area-inset-left, 0px);
+  --eco-safe-right: env(safe-area-inset-right, 0px);
+}
+
+.eco-tabbar {
+  padding-bottom: var(--eco-safe-bottom);
+  padding-left: var(--eco-safe-left);
+  padding-right: var(--eco-safe-right);
+}
+
+.eco-tabbar-content {
+  padding-bottom: calc(6rem + var(--eco-safe-bottom));
+}
+
+.safe-area-pb {
+  padding-bottom: calc(2rem + var(--eco-safe-bottom));
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;

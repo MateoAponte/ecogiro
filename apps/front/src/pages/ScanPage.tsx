@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { isNative } from '@/lib/platform';
-import { takePhoto, pickFromGallery } from '@/lib/camera';
+import { takePhoto, pickFromGallery, getCameraError } from '@/lib/camera';
 import {
   apiAnalyzeImage,
   apiVerifyImage,
@@ -180,7 +180,7 @@ export default function ScanPage() {
     if (photo) {
       await processImage(photo.dataUrl);
     } else {
-      toast.error('No se pudo capturar la imagen. Intenta de nuevo.');
+      toast.error(getCameraError() ?? 'No se pudo capturar la imagen. Intenta de nuevo.');
     }
   };
 
@@ -190,7 +190,7 @@ export default function ScanPage() {
     if (photo) {
       await processImage(photo.dataUrl);
     } else {
-      toast.error('No se pudo seleccionar la imagen.');
+      toast.error(getCameraError() ?? 'No se pudo seleccionar la imagen.');
     }
   };
 

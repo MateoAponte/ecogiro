@@ -16,11 +16,9 @@ import { NotificationsModule } from './notifications/notifications.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [
-        '.env.local',
-        `.env.${process.env.NODE_ENV ?? 'dev'}`,
-        '.env.dev',
-      ],
+      envFilePath: ['prod', 'production'].includes(process.env.NODE_ENV ?? '')
+        ? ['.env.production']
+        : ['.env.local', `.env.${process.env.NODE_ENV ?? 'dev'}`, '.env.dev'],
       validate: validateEnv,
     }),
     TypeOrmModule.forRootAsync({

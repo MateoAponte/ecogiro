@@ -13,10 +13,13 @@ import {
   saveAuthTokens,
   getAuthUser,
   saveAuthUser,
+  flushAuthStorage,
+  getAuthTokens,
   type StoredUser,
 } from '@/lib/auth-session';
 
 import { normalizeRole } from '@/lib/auth-roles';
+import { clearDeviceNotifications } from '@/lib/device-notifications';
 export type { UserRole } from '@/lib/auth-roles';
 
 type UserData = StoredUser;
@@ -27,7 +30,7 @@ interface AuthContextType {
     email: string,
     password: string,
   ) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   isRestoringSession: boolean;
   updateUserPoints: (points: number) => void;
@@ -74,21 +77,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setLocalPoints(getLocalPoints());
     let active = true;
-    const attempt = authAttempt.current;
-    void apiRestoreSession().then((result) => {
+    const restore = async (initial = false) => {
+      const attempt = authAttempt.current;
+      const result = await apiRestoreSession();
       if (!active || attempt !== authAttempt.current) return;
       if (result.success && result.data) {
         // The API adapter maps refresh.data.user to the fields used by the views.
         const profile = toUserData(result.data);
         saveAuthUser(profile);
         setUser(profile);
-      } else {
+      } else if (initial || !getAuthTokens()) {
         setUser(null);
       }
-      setIsRestoringSession(false);
-    });
+      if (initial) setIsRestoringSession(false);
+    };
+    void restore(true);
+    // Refresh quietly on returning from the background; do not unmount camera modals.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void restore();
+    };
+    const onOnline = () => {
+      void restore();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('online', onOnline);
     return () => {
       active = false;
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('online', onOnline);
     };
   }, []);
 
@@ -108,6 +124,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveAuthTokens(result.tokens);
     const profile = toUserData(result.data);
     saveAuthUser(profile);
+    try {
+      await flushAuthStorage();
+    } catch {
+      if (attempt !== authAttempt.current) return { success: false };
+      clearAuthTokens();
+      await flushAuthStorage().catch(() => undefined);
+      return {
+        success: false,
+        error: 'No se pudo guardar la sesión en este dispositivo. Intenta nuevamente.',
+      };
+    }
+    if (attempt !== authAttempt.current) return { success: false };
     setUser(profile);
     setIsRestoringSession(false);
     // Load local points after login
@@ -115,9 +143,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true };
   };
 
-  const logout = () => {
-    authAttempt.current += 1;
+  const logout = async () => {
+    const attempt = ++authAttempt.current;
+    await clearDeviceNotifications();
     clearAuthTokens();
+    await flushAuthStorage();
+    if (attempt !== authAttempt.current) return;
     setUser(null);
     setIsRestoringSession(false);
   };

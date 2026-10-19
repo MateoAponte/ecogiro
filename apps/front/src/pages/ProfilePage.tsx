@@ -48,10 +48,16 @@ export default function ProfilePage() {
     imageUrl: user?.foto_perfil,
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-    toast.success('Sesión cerrada');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+      toast.success('Sesión cerrada');
+    } catch {
+      toast.error(
+        'No se pudo borrar la sesión guardada. Vuelve a intentar cerrar sesión antes de cerrar la app.',
+      );
+    }
   };
 
   const handleSaveProfile = async (data: StoredProfile) => {
@@ -163,7 +169,6 @@ export default function ProfilePage() {
                 </div>
               </div>
             </section>
-
           </>
         )}
         {/* Logout */}

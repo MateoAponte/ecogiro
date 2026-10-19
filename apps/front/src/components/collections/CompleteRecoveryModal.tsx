@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { isNative } from '@/lib/platform';
-import { takePhoto } from '@/lib/camera';
+import { takePhoto, getCameraError } from '@/lib/camera';
 import { apiAchieved, apiCompleteRecovery } from '@/lib/completion-api';
 
 export function CompleteRecoveryModal({
@@ -79,7 +79,10 @@ export function CompleteRecoveryModal({
         let image: string;
         if (isNative()) {
           const captured = await takePhoto();
-          if (!captured) throw new Error('No se tomó la foto. Intenta nuevamente.');
+          if (!captured)
+            throw new Error(
+              getCameraError() ?? 'No se tomó la foto. Intenta nuevamente.',
+            );
           image = captured.dataUrl;
         } else {
           const current = video.current;

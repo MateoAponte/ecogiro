@@ -9,6 +9,13 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { isNative } from '@/lib/platform';
+import {
+  prepareDeviceNotifications,
+  showDeviceNotification,
+} from '@/lib/device-notifications';
+import type { PluginListenerHandle } from '@capacitor/core';
 import type { Notification } from '@/lib/notifications-api';
 import { emptyNotifications, NotificationsSession } from '@/lib/notifications-session';
 
@@ -30,6 +37,9 @@ const NotificationsContext = createContext<NotificationsContextType | undefined>
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { user, isRestoringSession, logout } = useAuth();
+  const navigate = useNavigate();
+  const userRef = useRef(user);
+  userRef.current = user;
   const userId = user?.user_id;
   const ready = !isRestoringSession && typeof userId === 'number' && userId > 0;
   const logoutRef = useRef(logout);
@@ -38,13 +48,68 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [snapshot, setSnapshot] = useState(emptyNotifications);
 
   useEffect(() => {
+    if (!ready || !isNative()) return;
+    let disposed = false;
+    let listener: PluginListenerHandle | null = null;
+    void prepareDeviceNotifications((action) => {
+      if (disposed || userRef.current?.user_id !== action.recipientId) return;
+      void sessionRef.current
+        ?.markAsRead(action.notificationId)
+        .then(() => {
+          if (
+            disposed ||
+            userRef.current?.user_id !== action.recipientId ||
+            !action.recoveryId
+          )
+            return;
+          navigate(
+            userRef.current.rol === 'RECUPERADOR'
+              ? `/agent/recoveries/${action.recoveryId}`
+              : `/collections/${action.recoveryId}`,
+          );
+        })
+        .catch(() =>
+          toast.error('No se pudo abrir la notificación. Intenta desde la campana.'),
+        );
+    })
+      .then((handle) => {
+        if (disposed) void handle?.remove();
+        else listener = handle;
+      })
+      .catch(() => {
+        if (!disposed)
+          toast.error(
+            'No se pudieron activar las notificaciones del teléfono. Revisa los permisos.',
+          );
+      });
+    return () => {
+      disposed = true;
+      void listener?.remove();
+    };
+  }, [ready, userId, navigate]);
+
+  useEffect(() => {
     if (!ready || userId === undefined) return;
     const session = new NotificationsSession(
       userId,
       setSnapshot,
-      () => logoutRef.current(),
+      () => {
+        void logoutRef
+          .current()
+          .catch(() => toast.error('No se pudo borrar la sesión del dispositivo.'));
+      },
       (item) => {
-        toast.info(item.title, { description: item.message });
+        if (!isNative()) toast.info(item.title, { description: item.message });
+        else
+          void showDeviceNotification(item)
+            .then((shown) => {
+              if (!shown && userRef.current?.user_id === item.recipientId)
+                toast.info(item.title, { description: item.message });
+            })
+            .catch(() => {
+              if (userRef.current?.user_id === item.recipientId)
+                toast.info(item.title, { description: item.message });
+            });
       },
     );
     sessionRef.current = session;

@@ -20,6 +20,11 @@ En Environment, usa **Add from .env** para importar el archivo local
 el repositorio. Las variables del servicio tienen prioridad sobre el archivo.
 Render puede asignar `PORT`; el backend escucha ese puerto en `0.0.0.0`.
 
+`CORS_ORIGINS` contiene orígenes separados por comas. Para el frontend actual:
+`https://ecogiro-1.onrender.com,http://localhost:8080,https://localhost,capacitor://localhost`.
+Usa el dominio del frontend (sin rutas), no la URL de la API.
+Login es `POST /api/v1/auth/login`, con email/password en JSON.
+
 `NODE_ENV=production` (o el alias `prod`) solo carga `.env.production`, nunca
 `.env.local` ni `.env.dev`. No subas credenciales al repositorio ni al frontend.
 

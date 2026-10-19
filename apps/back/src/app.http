@@ -1,0 +1,4 @@
+@baseUrl = https://ecogiro-1r2o.onrender.com/api/v1
+
+### Health check
+GET {{baseUrl}}/health

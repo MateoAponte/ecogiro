@@ -6,6 +6,11 @@ export const envValidationSchema = Joi.object({
     .valid('dev', 'prod', 'test', 'development', 'production')
     .default('dev'),
   PORT: Joi.number().default(3000),
+  CORS_ORIGINS: Joi.string()
+    .trim()
+    .default(
+      'http://localhost:8080,https://ecogiro-1.onrender.com,https://localhost,capacitor://localhost',
+    ),
 
   // Database
   DB_HOST: Joi.string().default('localhost'),

@@ -12,6 +12,7 @@ export const MATERIAL_POINTS = {
   UNKNOWN: 20,
 } as const;
 export const COMPONENT_POINTS = { cap: 2, label: 1 } as const;
+export const SCAN_POINTS_MULTIPLIER = 2;
 export interface VerifiedItem {
   material: keyof typeof MATERIAL_POINTS;
   weight_kg: number;
@@ -51,12 +52,16 @@ export function calculateScanPoints(items: VerifiedItem[], weight: number) {
     label_points: item.labels * COMPONENT_POINTS.label,
   }));
   // Round down once after summing all groups; splitting groups cannot create points.
-  const points = Math.floor(
+  const basePoints = Math.floor(
     breakdown.reduce(
       (sum, item) =>
         sum + item.weight_points + item.cap_points + item.label_points,
       0,
     ) + 1e-9,
   );
-  return { points, points_breakdown: breakdown };
+  // Apply after rounding so every previous award is doubled exactly.
+  return {
+    points: basePoints * SCAN_POINTS_MULTIPLIER,
+    points_breakdown: breakdown,
+  };
 }

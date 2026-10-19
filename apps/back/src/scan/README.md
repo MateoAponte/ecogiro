@@ -57,8 +57,8 @@ PP 45, LDPE/PEBD 35, PVC/PS/OTHER/UNKNOWN 20. Only a legible resin code confirms
 the material; otherwise UNKNOWN applies. Each visible cap adds 2 points and each
 visible label adds 1. These bonuses represent additional recovered components,
 not instructions to leave them attached; follow the collector's separation rules.
-Weight includes these components once. Total points are rounded down after summing.
-Example: 0.045 kg PET + 2 visible caps + 1 visible label = floor(2.25 + 4 + 1) = 7.
+Weight includes these components once. Total base points are rounded down after summing, then multiplied by 2.
+Example: 0.045 kg PET + 2 visible caps + 1 visible label = 2 * floor(2.25 + 4 + 1) = 14.
 
 Prompts: `prompts/analyze.prompt.ts` and `prompts/verify.prompt.ts`.
 Verify checks consistency using the same vision model; it is not proof of physical

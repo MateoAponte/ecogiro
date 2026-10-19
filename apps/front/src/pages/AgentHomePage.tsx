@@ -186,9 +186,9 @@ export default function AgentHomePage({
                 </Button>
               )}
               {accepted ? (
-                <Button
-                  variant="destructive"
-                  className="w-full"
+                <button
+                  type="button"
+                  className="w-full py-3 text-sm text-destructive font-medium hover:bg-destructive/10 rounded-xl transition-colors disabled:opacity-50"
                   disabled={cancel.isPending}
                   onClick={() => {
                     if (accepting.current) return;
@@ -199,7 +199,7 @@ export default function AgentHomePage({
                   {cancel.isPending && cancel.variables === recovery.id
                     ? 'Cancelando...'
                     : 'Cancelar recolección'}
-                </Button>
+                </button>
               ) : (
                 <Button
                   className="w-full gap-2"

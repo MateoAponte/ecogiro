@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { MobileLayout } from "@/components/layout/MobileLayout";
 
 // Helper to read saved ratings from localStorage
 const STORAGE_KEY = "collection_ratings";
@@ -64,7 +65,7 @@ export default function CollectionHistoryPage() {
     // Sort by date (newest first)
     return filtered.sort((a, b) => 
       new Date(b.rre_fecha_reporte).getTime() - new Date(a.rre_fecha_reporte).getTime()
-    );
+    ).slice(0, 10);
   }, [reports, dateRange]);
 
   const clearFilters = () => {
@@ -74,7 +75,7 @@ export default function CollectionHistoryPage() {
   const hasFilters = dateRange.from || dateRange.to;
 
   return (
-    <div className="min-h-screen bg-background">
+    <MobileLayout>
       {/* Header */}
       <header className="sticky top-0 bg-background/95 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4 z-50">
         <button
@@ -85,16 +86,15 @@ export default function CollectionHistoryPage() {
         >
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
-        <h1 className="text-lg font-display font-semibold text-foreground">Historial completo</h1>
+        <h1 className="text-lg font-display font-semibold text-foreground">Historial de recolecciones</h1>
       </header>
 
-      <div className="px-5 py-6 space-y-4 pb-24">
+      <div className="px-5 py-6 space-y-6">
         {/* Date Filter */}
         <div className="flex items-center gap-2">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="flex-1 justify-start text-left font-normal">
-                <Calendar className="mr-2 h-4 w-4" />
+              <button type="button" className="eco-input min-w-0 flex-1 text-left flex items-center justify-between gap-3">
                 {dateRange.from ? (
                   dateRange.to ? (
                     <>
@@ -106,7 +106,8 @@ export default function CollectionHistoryPage() {
                 ) : (
                   <span className="text-muted-foreground">Filtrar por fecha</span>
                 )}
-              </Button>
+                <Calendar className="w-4 h-4 shrink-0 text-muted-foreground" />
+              </button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
               <CalendarComponent
@@ -186,7 +187,7 @@ export default function CollectionHistoryPage() {
           </div>
         )}
       </div>
-    </div>
+    </MobileLayout>
   );
 }
 

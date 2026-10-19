@@ -378,14 +378,14 @@ export default function CollectionDetailPage() {
 
         {/* Rating & Tip Section - Only for collected */}
         {isAgent && isAccepted && (
-          <Button
-            variant="destructive"
-            className="w-full"
+          <button
+            type="button"
+            className="w-full py-3 text-sm text-destructive font-medium hover:bg-destructive/10 rounded-xl transition-colors disabled:opacity-50"
             disabled={isDeleting}
             onClick={handleDeleteReport}
           >
             {isDeleting ? 'Cancelando...' : 'Cancelar recolección'}
-          </Button>
+          </button>
         )}
         {isAgent && report.comments && (
           <section className="eco-card space-y-2">

@@ -1,4 +1,5 @@
 import { MobileLayout } from "@/components/layout/MobileLayout";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { Clock, MapPin, Package, ChevronRight, Star, DollarSign, Calendar, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -121,9 +122,12 @@ export default function CollectionsPage() {
     <MobileLayout>
       <div className="px-5 py-6 space-y-6">
         {/* Header */}
-        <header className="animate-fade-up">
+        <header className="animate-fade-up flex items-start justify-between gap-3">
+          <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Recolecciones</h1>
           <p className="text-muted-foreground mt-1">Revisa el estado de tus solicitudes</p>
+          </div>
+          <NotificationCenter />
         </header>
 
         {/* Loading skeleton */}

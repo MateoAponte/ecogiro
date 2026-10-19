@@ -1,4 +1,5 @@
-@baseUrl = http://localhost:3000/api/v1/user
+# @baseUrl = http://localhost:3000/api/v1/user
+@baseUrl = https://ecogiro-1r2o.onrender.com/api/v1/user
 @authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxODg5NTEsImV4cCI6MTc5Mjc5Mzc1MX0.cZjZi7FF_oCvhdo3O6Ecn61ff2xHpys_XZyKMDQda0Q
 @id = 7
 
@@ -18,7 +19,7 @@ Authorization: Bearer {{authToken}}
 ### Create a user
 POST {{baseUrl}}
 Content-Type: application/json
-{{recoveryAgent2}}
+{{citizen}}
 
 ### Update a user
 PATCH {{baseUrl}}/{{id}}

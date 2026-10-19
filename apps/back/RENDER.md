@@ -9,6 +9,12 @@ Desde la raíz del repositorio:
 - Build command: `npm ci --include=dev && npm run build --workspace=apps/back`
 - Start command: `npm run start:prod --workspace=apps/back`
 
+Para estos comandos, deja **Root Directory** vacío en Render. No uses
+`node commitlint.config.js` ni `node .` como Start Command: commitlint valida
+mensajes de commits y no inicia la API. `npm start` también delega al backend.
+Si usas Root Directory `apps/back`, el Start Command es `npm run start:prod`,
+sin `--workspace=apps/back`.
+
 En Environment, usa **Add from .env** para importar el archivo local
 `apps/back/.env.production`. Está excluido de Git: Render no lo recibirá al clonar
 el repositorio. Las variables del servicio tienen prioridad sobre el archivo.

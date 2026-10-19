@@ -32,6 +32,7 @@ import { RecoveryService } from './provider/recovery.service';
 import { Rol } from 'src/user/enums';
 import { PaginationDto } from './dto/pagination.dto';
 import { FindRecoveriesByUserDto } from './dto/find-recoveries-by-user.dto';
+import { CompleteRecoveryDto } from './dto/complete-recovery.dto';
 
 const recoveryIdPipe = new ParseUUIDPipe({
   version: '4',
@@ -107,10 +108,19 @@ export class RecoveryController {
 
   @HttpCode(HttpStatus.OK)
   @Get(':id')
-  findByRecoveryId(
+  @UseGuards(JwtAuthGuard)
+  async findByRecoveryId(
     @Param('id', recoveryIdPipe) id: string,
+    @Req() request: IAuthRequest,
   ): Promise<RecoveryResponseDto> {
-    return this.recoveryService.findByRecoveryId(id);
+    const recovery = await this.recoveryService.findByRecoveryId(id);
+    const { id: userId, rol } = request.user;
+    const allowed =
+      rol === Rol.ADMIN ||
+      (rol === Rol.USER && recovery.user_id === userId) ||
+      (rol === Rol.RECOVERY && recovery.agent_id === userId);
+    if (!allowed) throw new ForbiddenException('You cannot view this recovery');
+    return recovery;
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -120,6 +130,26 @@ export class RecoveryController {
     @Body() updateRecoveryDto: UpdateRecoveryDto,
   ): Promise<RecoveryResponseDto> {
     return this.recoveryService.updateRecovery(id, updateRecoveryDto);
+  }
+
+  @Patch(':id/complete')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Complete an assigned recovery using an Achieved receipt',
+  })
+  @ApiOkResponse({ type: RecoveryResponseDto })
+  completeRecovery(
+    @Param('id', recoveryIdPipe) id: string,
+    @Body() body: CompleteRecoveryDto,
+    @Req() request: IAuthRequest,
+  ): Promise<RecoveryResponseDto> {
+    return this.recoveryService.completeRecovery(
+      id,
+      request.user.id!,
+      request.user.rol!,
+      body.verification_token,
+    );
   }
 
   @Patch(':id/accept')
@@ -144,7 +174,16 @@ export class RecoveryController {
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  removeRecovery(@Param('id', recoveryIdPipe) id: string): Promise<void> {
-    return this.recoveryService.removeRecovery(id);
+  @UseGuards(JwtAuthGuard)
+  removeRecovery(
+    @Param('id', recoveryIdPipe) id: string,
+    @Req() request: IAuthRequest,
+  ): Promise<void> {
+    const userId = request.user?.id;
+    const userRole = request.user?.rol;
+    if (typeof userId !== 'number' || userRole === undefined) {
+      throw new UnauthorizedException('Invalid user');
+    }
+    return this.recoveryService.removeRecovery(id, userId, userRole);
   }
 }

@@ -1,4 +1,8 @@
-import { COMPONENT_POINTS, MATERIAL_POINTS } from '../scan-points';
+import {
+  COMPONENT_POINTS,
+  MATERIAL_POINTS,
+  SCAN_POINTS_MULTIPLIER,
+} from '../scan-points';
 
 export const VERIFY_SYSTEM_PROMPT = `
 Eres el verificador visual independiente de EcoGiro. Responde en español con el esquema JSON.
@@ -15,10 +19,13 @@ El peso es aproximado: rechaza estimaciones inverosímiles por cantidad y tamañ
 una medición imposible desde una foto. Si no hay plástico o la foto es ambigua, rechaza.
 
 Equivalencias de puntos por KILOGRAMO (no por envase):
-${Object.entries(MATERIAL_POINTS).map(([material, points]) => `- ${material}: ${points} puntos/kg.`).join('\n')}
+${Object.entries(MATERIAL_POINTS)
+  .map(([material, points]) => `- ${material}: ${points} puntos/kg.`)
+  .join('\n')}
 Cada tapa visible suma ${COMPONENT_POINTS.cap} puntos y cada etiqueta visible suma ${COMPONENT_POINTS.label} punto.
-Fórmula: floor(suma(peso_kg_por_material * tarifa) + tapas * ${COMPONENT_POINTS.cap} + etiquetas * ${COMPONENT_POINTS.label}).
-Ejemplo: 0.045 kg PET, 2 tapas y 1 etiqueta = floor(2.25 + 4 + 1) = 7 puntos.
+Las tarifas anteriores son puntos base. Multiplica el total redondeado por ${SCAN_POINTS_MULTIPLIER}.
+Fórmula: ${SCAN_POINTS_MULTIPLIER} * floor(suma(peso_kg_por_material * tarifa) + tapas * ${COMPONENT_POINTS.cap} + etiquetas * ${COMPONENT_POINTS.label}).
+Ejemplo: 0.045 kg PET, 2 tapas y 1 etiqueta = ${SCAN_POINTS_MULTIPLIER} * floor(2.25 + 4 + 1) = ${SCAN_POINTS_MULTIPLIER * 7} puntos.
 Los puntos son estimados; no acreditan saldo ni representan peso medido.
 
 Contrato INTERNO que debes devolver (el backend conserva el análisis y agrega los puntos):
@@ -45,7 +52,7 @@ Para el contrato interno actual del modelo, representa este rechazo con matches=
 issues conteniendo el motivo e items=[]. Los ejemplos públicos documentan la firma de la API.
 
 Referencia de la respuesta pública EXITOSA (la arma el backend; no es tu esquema de salida):
-{"is_plastic":true,"reason_invalid":null,"materials":["2 botellas PET con código visible"],"preparation":["1. Vacía y enjuaga los envases"],"impact":["Contribuyes a recuperar materia prima"],"environmental_damage":["Una gestión inadecuada puede dispersar residuos y microplásticos"],"weight_estimate":0.045,"eco_points":7}
+{"is_plastic":true,"reason_invalid":null,"materials":["2 botellas PET con código visible"],"preparation":["1. Vacía y enjuaga los envases"],"impact":["Contribuyes a recuperar materia prima"],"environmental_damage":["Una gestión inadecuada puede dispersar residuos y microplásticos"],"weight_estimate":0.045,"eco_points":${SCAN_POINTS_MULTIPLIER * 7}}
 En caso de invalidación definitiva, el endpoint mantiene el error HTTP 422 con message
 "Se requiere una foto más clara de los elementos a recolectar." No devuelve puntos ganados.
 `;

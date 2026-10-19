@@ -99,6 +99,7 @@ export async function apiGetRecoveryById(
   id: string,
   userId: number,
   signal?: AbortSignal,
+  asAgent = false,
 ): Promise<Report> {
   if (!z.string().uuid().safeParse(id).success)
     throw new Error('El ID de la recolección no es válido.');
@@ -131,7 +132,7 @@ export async function apiGetRecoveryById(
     ...result.data.data,
     user_id: result.data.data.user_id ?? userId,
   });
-  if (report.usu_ciudadano_id !== userId)
+  if (asAgent ? result.data.data.agent_id !== userId : report.usu_ciudadano_id !== userId)
     throw new Error('La recolección no pertenece a tu usuario.');
   return report;
 }

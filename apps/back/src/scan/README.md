@@ -1,5 +1,38 @@
 # Scan — Analyze beta
 
+## Achieved: collection completion (beta)
+
+The agent's Accepted tab opens a camera modal. Capture calls
+`POST /api/v1/scan/achieved` with multipart fields `file` and `recovery_id`, using
+the assigned agent's access token. The same image limits as Analyze apply.
+The request checks the assignment and ASSIGNED status before calling Gemini.
+
+Editable visual policy: `prompts/achieved.prompt.ts`. It accepts identifiable
+recyclables (plastic, paper/cardboard, glass or metal) grouped for collection;
+unclear or invalid evidence returns HTTP 422. It does not prove a physical
+handover, location or measured weight, and does not detect photo reuse.
+
+Success returns `is_valid: true`, `reason_invalid: null`, `materials` and a
+`verification_token`. This signed receipt is bound to the recovery and agent,
+expires after ten minutes and becomes invalid on backend restart. The current
+receipt key lives in one backend process; multiple replicas require a shared
+signing key before deployment.
+
+Then `PATCH /api/v1/recovery/:id/complete` accepts
+`{ "verification_token": "..." }`. Only the assigned agent can transition an
+ASSIGNED recovery to COMPLETED. A conditional update prevents concurrent cancel
+and complete operations from both succeeding. Repeating completion of an already
+completed recovery by that agent returns its data without another event.
+The completion listener saves a notification for the citizen and publishes it
+through SSE. No additional points or measured kilograms are credited by this flow.
+
+The modal retains a successful receipt if completion fails, allowing a retry
+without another Gemini call. Taking another photo discards the receipt.
+Manual requests: `achieved.http`. To check the full UI, open an assigned recovery
+in the agent's Accepted tab, complete it with a photo, and inspect the citizen's
+notification and the recovery detail showing COMPLETED. Also try an unclear photo
+and confirm the recovery remains ASSIGNED.
+
 Analyze and Verify are implemented. The frontend calls Analyze, then Verify with
 the same image and analysis before showing the result. Neither endpoint creates
 scan/recovery rows or credits the user's balance. There are no new DB tables.
@@ -24,8 +57,8 @@ PP 45, LDPE/PEBD 35, PVC/PS/OTHER/UNKNOWN 20. Only a legible resin code confirms
 the material; otherwise UNKNOWN applies. Each visible cap adds 2 points and each
 visible label adds 1. These bonuses represent additional recovered components,
 not instructions to leave them attached; follow the collector's separation rules.
-Weight includes these components once. Total points are rounded down after summing.
-Example: 0.045 kg PET + 2 visible caps + 1 visible label = floor(2.25 + 4 + 1) = 7.
+Weight includes these components once. Total base points are rounded down after summing, then multiplied by 2.
+Example: 0.045 kg PET + 2 visible caps + 1 visible label = 2 * floor(2.25 + 4 + 1) = 14.
 
 Prompts: `prompts/analyze.prompt.ts` and `prompts/verify.prompt.ts`.
 Verify checks consistency using the same vision model; it is not proof of physical

@@ -108,7 +108,23 @@ export class RecoveryRepository {
     });
   }
 
-  async remove(id: string): Promise<void> {
-    await this.repository.delete(id);
+  async completeAssigned(id: string, agentId: number): Promise<boolean> {
+    const result = await this.repository.update(
+      { id, agent_id: agentId, status: Status.ASSIGNED },
+      { status: Status.COMPLETED },
+    );
+    return result.affected === 1;
+  }
+
+  async cancelAssigned(id: string, agentId: number): Promise<boolean> {
+    const result = await this.repository.update(
+      { id, agent_id: agentId, status: Status.ASSIGNED },
+      { status: Status.CANCELED },
+    );
+    return result.affected === 1;
+  }
+  async removeUnassigned(id: string, status: Status): Promise<boolean> {
+    const result = await this.repository.delete({ id, status });
+    return result.affected === 1;
   }
 }

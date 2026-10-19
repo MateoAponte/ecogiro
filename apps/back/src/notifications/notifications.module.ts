@@ -8,6 +8,7 @@ import { NotificationsStreamService } from './providers/notifications-stream.ser
 import { NotificationsService } from './providers/notifications.service';
 import { NotificationsRepositoryService } from './providers/notifications-repository.service';
 import { RecoveryNotificationsListener } from './listeners/recovery-notifications.listener';
+import { SubscriptionFactory } from './helpers/subscriptionFactory';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { RecoveryNotificationsListener } from './listeners/recovery-notification
     NotificationsService,
     NotificationsRepositoryService,
     RecoveryNotificationsListener,
+    SubscriptionFactory,
   ],
 })
 export class NotificationsModule {}

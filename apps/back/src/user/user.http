@@ -4,7 +4,8 @@
 
 @citizen = { "name": "John Doe", "email": "john@example.com", "password": "Abcd!123456789", "address": "Calle 68 Sur #49-21", "phone": "+573001234567", "rol": 1 }
 
-@recoveryAgent = {"name":"John Doe","email":"recovery@example.com","password":"Abcd!123456789","address":"Calle 68 Sur #49-21","phone":"+573001234567","rol":}
+@recoveryAgent = {"name":"John Doe","email":"recovery@example.com","password":"Abcd!123456789","address":"Calle 68 Sur #49-21","phone":"+573001234567","rol":2}
+@recoveryAgent2 = {"name":"John Doe","email":"recovery2@example.com","password":"Abcd!123456789","address":"Calle 68 Sur #49-21","phone":"+573001234567","rol":2}
 
 ### Get a user
 GET {{baseUrl}}/{{id}}
@@ -17,7 +18,7 @@ Authorization: Bearer {{authToken}}
 ### Create a user
 POST {{baseUrl}}
 Content-Type: application/json
-{{recoveryAgent}}
+{{recoveryAgent2}}
 
 ### Update a user
 PATCH {{baseUrl}}/{{id}}

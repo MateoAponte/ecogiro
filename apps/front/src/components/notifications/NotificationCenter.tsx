@@ -52,7 +52,7 @@ export function NotificationCenter() {
       if (notification.recoveryId)
         navigate(
           user?.rol === 'RECUPERADOR'
-            ? '/agent'
+            ? `/agent/recoveries/${notification.recoveryId}`
             : `/collections/${notification.recoveryId}`,
         );
     } catch (error) {

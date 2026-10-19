@@ -2,9 +2,9 @@
   "name": "ecogiro",
   "version": "1.0.0",
   "description": "",
-  "main": "commitlint.config.js",
   "packageManager": "pnpm@10.0.0",
   "scripts": {
+    "start": "npm run start:prod --workspace=apps/back",
     "build": "turbo run build",
     "test": "turbo run test -- --passWithNoTests",
     "lint": "turbo run lint",

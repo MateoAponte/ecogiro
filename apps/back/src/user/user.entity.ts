@@ -31,12 +31,6 @@ export class User {
   @Column({ type: 'int', default: 0 })
   eco_points!: number;
 
-  @Column({ nullable: false })
-  phone: string;
-
-  @Column({ nullable: false })
-  address: string;
-
   @Exclude()
   @Column()
   password!: string;

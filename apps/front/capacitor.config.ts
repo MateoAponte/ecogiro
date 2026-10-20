@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.1099b9a78ec742a1b56711154e5aae82',
+  appId: 'com.ecogiro.app',
   appName: 'ecogiro',
   webDir: 'dist',
   server: {
@@ -26,9 +26,9 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: true,
-      backgroundColor: '#22C55E',
+      backgroundColor: '#FFFAF0',
       androidSplashResourceName: 'splash',
-      androidScaleType: 'CENTER_CROP',
+      androidScaleType: 'FIT_CENTER',
       showSpinner: false,
       splashFullScreen: true,
       splashImmersive: true,
@@ -36,10 +36,10 @@ const config: CapacitorConfig = {
   },
   android: {
     allowMixedContent: true,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFAF0',
   },
   ios: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFAF0',
   },
 };
 

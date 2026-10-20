@@ -1,4 +1,5 @@
-@baseUrl = http://localhost:3000/api/v1
+# @baseUrl = http://localhost:3000/api/v1
+@baseUrl = https://ecogiro-1r2o.onrender.com/api/v1
 @userId = 7
 @id = 40204db7-7240-4733-a998-aa811bca8634
 
@@ -6,11 +7,12 @@
 POST {{baseUrl}}/medails
 Content-Type: application/json
 {
-  "name": "Hoja por hoja",
-  "description": "Gana tus 1ros eco puntos por completar un reciclaje",
-  "condition_type": "ECO_POINTS",
-  "condition_value": 1
+  "name": "Reciclador Experimentado",
+  "description": "10kg reciclados",
+  "condition_type": "RECYCLED_KG",
+  "condition_value": 10
 }
+
 
 ### List
 GET {{baseUrl}}/medails

@@ -2,6 +2,36 @@
 
 Esta guía explica cómo compilar la app como aplicación nativa para Android e iOS.
 
+## APK de prueba en Windows
+
+El proyecto Android está en `apps/front/android`, con identificador `com.ecogiro.app`.
+El branding se regenera desde el logo original con
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/generate-brand-assets.ps1`
+ejecutado desde `apps/front`. Hazlo después de `npx cap add android` si vuelves a
+generar la plataforma: produce favicon, íconos web/Android y recursos/tema del splash
+en verde `#1E8E5A` y crema `#FFFAF0`. La carpeta Android está ignorada por Git,
+por lo que el script permite reconstruir esos cambios en otra copia del proyecto.
+Desde `apps/front`, compila los archivos web y sincroniza antes de crear otro APK:
+
+```powershell
+npm.cmd run build
+npx.cmd cap sync android
+$env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+cd android
+.\gradlew.bat assembleDebug
+```
+
+Resultado: `apps/front/android/app/build/outputs/apk/debug/app-debug.apk`.
+Transfiere ese archivo al teléfono y ábrelo para instalar. Android puede pedir
+autorizar la instalación desde el navegador o gestor de archivos utilizado.
+El build de producción usa la API configurada en `apps/front/.env.production`.
+
+Prueba login, cerrar/reabrir la app, cámara y selección de imagen, aceptar/cancelar
+una recolección desde otra cuenta y su notificación local, y el menú inferior
+con gestos o navegación de tres botones. El APK debug sirve para pruebas directas;
+para Play Store se genera un release firmado.
+
 ## Persistencia de sesión
 
 La sesión se guarda como `eco_auth_session`, con access token, refresh token y
@@ -76,7 +106,7 @@ Coloca los íconos en `android/app/src/main/res/`:
 - `mipmap-xxxhdpi/ic_launcher.png` (192x192)
 
 #### Android - Splash Screen
-El splash se configura en `capacitor.config.ts` (ya configurado con color verde #22C55E).
+El splash se configura en `capacitor.config.ts` y en el tema Android (fondo crema #FFFAF0 y logo verde de EcoGiro).
 Para imagen personalizada, coloca `splash.png` en `android/app/src/main/res/drawable/`.
 
 #### iOS - Íconos

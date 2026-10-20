@@ -1,14 +1,15 @@
-@baseUrl = http://localhost:3000/api/v1/rewards
+# @baseUrl = http://localhost:3000/api/v1/rewards
+@baseUrl = https://ecogiro-1r2o.onrender.com/api/v1/rewards
 @id = 7b637db0-04bb-4f89-a745-78697fa6c73b
 
 ### Create
 POST {{baseUrl}}
 Content-Type: application/json
 {
-  "name": "Boletas de cine",
-  "description": "2 entradas para ti",
-  "required_points": 500,
-  "image_url": "https://www.ecogiro.com/assets/images/rewards/cine.png"
+  "name": "Kit eco-aseo",
+  "description": "Jabón artesanal y cepillo de bambú",
+  "required_points": 200,
+  "image_url": "https://cdn-icons-png.flaticon.com/512/3183/3183186.png"
 }
 
 ### List

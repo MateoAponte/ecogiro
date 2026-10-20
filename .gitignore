@@ -14,9 +14,17 @@ package-lock.json
 **/dist/
 build/
 **/public/
+!apps/front/public/
+apps/front/public/*
+!apps/front/public/fav.ico
+!apps/front/public/icon-192.png
+!apps/front/public/icon-512.png
+!apps/front/public/apple-touch-icon.png
 
 # Env
 .env
 .env.local
 **/.env.production
-**/android/
+
+# Android
+**/android

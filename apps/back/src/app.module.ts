@@ -6,12 +6,19 @@ import { AppService } from './app.service';
 import { validateEnv } from '../config/joi.validation';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { RecoveryModule } from './collections/recovery.module';
+import { RewardModule } from './rewards/reward.module';
+import { MedailModule } from './medails/medail.module';
+import { ScanModule } from './scan/scan.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [`.env.${process.env.NODE_ENV ?? 'dev'}`, '.env.dev'],
+      envFilePath: ['prod', 'production'].includes(process.env.NODE_ENV ?? '')
+        ? ['.env.production']
+        : ['.env.local', `.env.${process.env.NODE_ENV ?? 'dev'}`, '.env.dev'],
       validate: validateEnv,
     }),
     TypeOrmModule.forRootAsync({
@@ -35,6 +42,11 @@ import { AuthModule } from './auth/auth.module';
     }),
     UserModule,
     AuthModule,
+    RecoveryModule,
+    RewardModule,
+    MedailModule,
+    ScanModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

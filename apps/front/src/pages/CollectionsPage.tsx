@@ -1,4 +1,5 @@
 import { MobileLayout } from "@/components/layout/MobileLayout";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { Clock, MapPin, Package, ChevronRight, Star, DollarSign, Calendar, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,8 @@ const getSavedRatings = (): Record<string, { rating: number; tip: number | null 
 
 // Status config - Estados: ACEPTADO, EN_ESPERA, RECOGIDO
 const statusConfig: Record<string, { label: string; className: string }> = {
+  CANCELADO: { label: "Cancelado", className: "bg-muted text-muted-foreground" },
+  EXPIRADO: { label: "Expirado", className: "bg-muted text-muted-foreground" },
   ACEPTADO: {
     label: "Aceptado",
     className: "bg-blue-100 text-blue-700",
@@ -41,7 +44,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 export default function CollectionsPage() {
-  const { reports, isLoading, refetchReports } = useReports();
+  const { reports, isLoading, error, refetchReports } = useReports();
   const [savedRatings, setSavedRatings] = useState<Record<string, { rating: number; tip: number | null }>>({});
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: undefined,
@@ -56,12 +59,12 @@ export default function CollectionsPage() {
   useEffect(() => {
     refetchReports();
     setSavedRatings(getSavedRatings());
-  }, []);
+  }, [refetchReports]);
 
   // Filter and sort reports
   const { upcoming, history } = useMemo(() => {
     let upcomingReports = reports.filter((r) => r.rre_estado === "EN_ESPERA" || r.rre_estado === "ACEPTADO");
-    let historyReports = reports.filter((r) => r.rre_estado === "RECOGIDO");
+    let historyReports = reports.filter((r) => ["RECOGIDO", "CANCELADO", "EXPIRADO"].includes(r.rre_estado));
     
     // Apply date range filter to upcoming
     if (dateRange.from) {
@@ -104,7 +107,7 @@ export default function CollectionsPage() {
   };
 
   const hasFilters = dateRange.from || dateRange.to;
-  const totalHistory = reports.filter((r) => r.rre_estado === "RECOGIDO").length;
+  const totalHistory = reports.filter((r) => ["RECOGIDO", "CANCELADO", "EXPIRADO"].includes(r.rre_estado)).length;
 
   // Format date range display
   const getDateRangeText = () => {
@@ -119,12 +122,21 @@ export default function CollectionsPage() {
     <MobileLayout>
       <div className="px-5 py-6 space-y-6">
         {/* Header */}
-        <header className="animate-fade-up">
+        <header className="animate-fade-up flex items-start justify-between gap-3">
+          <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Recolecciones</h1>
           <p className="text-muted-foreground mt-1">Revisa el estado de tus solicitudes</p>
+          </div>
+          <NotificationCenter />
         </header>
 
         {/* Loading skeleton */}
+        {error && (
+          <div role="alert" className="eco-card text-sm text-destructive space-y-2">
+            <p>{error}</p>
+            <button type="button" className="underline" onClick={() => void refetchReports()}>Reintentar</button>
+          </div>
+        )}
         {isLoading && (
           <div className="space-y-6">
             <section className="eco-section">
@@ -138,7 +150,7 @@ export default function CollectionsPage() {
         )}
 
         {/* Upcoming */}
-        {!isLoading && (
+        {!isLoading && !error && (
           <section className="eco-section animate-fade-up" style={{ animationDelay: "50ms" }}>
             <div className="flex items-center justify-between mb-3">
               <h2 className="eco-section-title mb-0">Próximas</h2>
@@ -265,7 +277,7 @@ export default function CollectionsPage() {
         )}
 
         {/* History */}
-        {!isLoading && (
+        {!isLoading && !error && (
           <section className="eco-section animate-fade-up" style={{ animationDelay: "100ms" }}>
             <div className="flex items-center justify-between mb-3">
               <h2 className="eco-section-title mb-0">Historial</h2>
@@ -298,7 +310,7 @@ export default function CollectionsPage() {
         )}
 
         {/* Empty state */}
-        {!isLoading && reports.length === 0 && (
+        {!isLoading && !error && reports.length === 0 && (
           <div className="eco-card text-center py-8">
             <p className="text-muted-foreground">No tienes recolecciones registradas</p>
           </div>

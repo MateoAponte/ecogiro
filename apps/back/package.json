@@ -8,11 +8,11 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start cross-env NODE_ENV=dev",
+    "start": "npm run start:prod",
     "start:debug": "nest start --debug --watch",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "start:dev": "cross-env NODE_ENV=dev nest start --watch",
-    "start:prod": "cross-env NODE_ENV=prod node dist/main",
+    "start:prod": "cross-env NODE_ENV=production TS_NODE_BASEURL=./dist node -r tsconfig-paths/register dist/src/main.js",
     "test": "cross-env NODE_ENV=test jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -102,7 +102,7 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   },
-  "main": "index.js",
+  "main": "dist/src/main.js",
   "directories": {
     "test": "test"
   },

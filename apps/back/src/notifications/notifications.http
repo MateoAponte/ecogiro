@@ -1,0 +1,34 @@
+@baseUrl = http://localhost:3000/api/v1
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UgMyIsImlhdCI6MTc5MjI3MTA4NiwiZXhwIjoxNzkyODc1ODg2fQ.qDZWsh_A3GlAWLSiaKxTm_Sj9T5qdVyMvqo8X7gSzl4
+@notificationId = REEMPLAZA_CON_UN_ID_DEL_HISTORIAL
+
+### Consultar mis últimas 50 notificaciones. Sin registros, data será [].
+GET {{baseUrl}}/notifications
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### Contar mis notificaciones sin leer. Sin registros, data será 0.
+GET {{baseUrl}}/notifications/unread-count
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### Marcar una notificación propia como leída. No requiere body.
+# Copia un UUID del historial en notificationId. Repetir conserva read_at.
+PATCH {{baseUrl}}/notifications/{{notificationId}}/read
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### UUID inválido: debe responder 400 con "Not valid ID".
+PATCH {{baseUrl}}/notifications/not-a-uuid/read
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### Abrir SSE: connection.ready inmediato y heartbeat cada 25 segundos.
+# La petición permanece abierta. Detén/cancela su ejecución para desconectarte.
+GET {{baseUrl}}/notifications/stream
+Authorization: Bearer {{accessToken}}
+Accept: text/event-stream
+
+### Sin token: debe responder 401 y no abrir el stream.
+GET {{baseUrl}}/notifications/stream
+Accept: text/event-stream

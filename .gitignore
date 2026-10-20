@@ -18,4 +18,5 @@ build/
 # Env
 .env
 .env.local
-!apps/front/.env
+**/.env.production
+**/android/

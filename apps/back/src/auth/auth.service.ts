@@ -72,9 +72,11 @@ export class AuthService {
     };
   }
 
-  refresh(refreshToken: string): TokenUserDto {
+  async refresh(refreshToken: string): Promise<TokenUserDto> {
     const payload = this.jwtProvider.refreshTokens(refreshToken);
-    return this.jwtProvider.signTokens(payload);
+    const user = await this.usersRepositoryService.findUserById(String(payload.id));
+    if (!user) throw new UnauthorizedException('User not found');
+    return { ...this.jwtProvider.signTokens(user), user };
   }
 
   encrypt(secret: TokenDto): TokenDto {

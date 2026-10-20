@@ -1,0 +1,29 @@
+@baseUrl = http://localhost:3000/api/v1
+@agentAccessToken = REPLACE_WITH_AGENT_ACCESS_TOKEN
+@recoveryId = REPLACE_WITH_ASSIGNED_RECOVERY_UUID
+@verificationToken = REPLACE_WITH_ACHIEVED_VERIFICATION_TOKEN
+
+### Verify a photo (place collection.jpg beside this file, or change its path).
+POST {{baseUrl}}/scan/achieved
+Authorization: Bearer {{agentAccessToken}}
+Content-Type: multipart/form-data; boundary=achieved-photo
+
+--achieved-photo
+Content-Disposition: form-data; name="recovery_id"
+
+{{recoveryId}}
+--achieved-photo
+Content-Disposition: form-data; name="file"; filename="collection.jpg"
+Content-Type: image/jpeg
+
+< ./collection.jpg
+--achieved-photo--
+
+### Copy data.verification_token from the previous response.
+PATCH {{baseUrl}}/recovery/{{recoveryId}}/complete
+Authorization: Bearer {{agentAccessToken}}
+Content-Type: application/json
+
+{
+  "verification_token": "{{verificationToken}}"
+}

@@ -1,0 +1,28 @@
+@baseUrl = http://localhost:3000/api/v1/rewards
+@id = 7b637db0-04bb-4f89-a745-78697fa6c73b
+
+### Create
+POST {{baseUrl}}
+Content-Type: application/json
+{
+  "name": "Boletas de cine",
+  "description": "2 entradas para ti",
+  "required_points": 500,
+  "image_url": "https://www.ecogiro.com/assets/images/rewards/cine.png"
+}
+
+### List
+GET {{baseUrl}}
+
+### Find
+GET {{baseUrl}}/{{id}}
+
+### Update
+PATCH {{baseUrl}}/{{id}}
+Content-Type: application/json
+{
+  "image_url": "https://www.ecogiro.com/assets/images/rewards/cine.png"
+}
+
+### Delete
+DELETE {{baseUrl}}/{{id}}

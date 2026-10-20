@@ -6,6 +6,11 @@ export const envValidationSchema = Joi.object({
     .valid('dev', 'prod', 'test', 'development', 'production')
     .default('dev'),
   PORT: Joi.number().default(3000),
+  CORS_ORIGINS: Joi.string()
+    .trim()
+    .default(
+      'http://localhost:8080,https://ecogiro-1.onrender.com,https://localhost,capacitor://localhost',
+    ),
 
   // Database
   DB_HOST: Joi.string().default('localhost'),
@@ -17,6 +22,13 @@ export const envValidationSchema = Joi.object({
   // JWT
   JWT_SECRET: Joi.string().min(16).required(),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
+
+  // Optional until the Analyze endpoint is configured.
+  GEMINI_API_KEY: Joi.string().trim().allow('').optional(),
+  GEMINI_SCAN_MODEL: Joi.string()
+    .trim()
+    .pattern(/^gemini-[a-zA-Z0-9._-]+$/)
+    .default('gemini-3.5-flash-lite'),
 
   // Prefix
   API_PREFIX: Joi.string().default('api/v1'),

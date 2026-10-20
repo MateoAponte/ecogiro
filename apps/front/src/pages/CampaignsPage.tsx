@@ -1,13 +1,22 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Megaphone, Plus, Calendar, DollarSign, Target, LogOut, FileText, CheckCircle } from "lucide-react";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Megaphone,
+  Plus,
+  Calendar,
+  DollarSign,
+  Target,
+  LogOut,
+  FileText,
+  CheckCircle,
+} from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Campaign {
   id: string;
@@ -16,11 +25,11 @@ interface Campaign {
   approximatePrice: string;
   endDate: string;
   createdAt: string;
-  status: "active" | "accepted";
+  status: 'active' | 'accepted';
 }
 
-const CAMPAIGNS_STORAGE_KEY = "acopio_campaigns";
-const CITIZEN_NOTIFICATIONS_KEY = "citizen_notifications";
+const CAMPAIGNS_STORAGE_KEY = 'acopio_campaigns';
+const CITIZEN_NOTIFICATIONS_KEY = 'citizen_notifications';
 
 const getCampaigns = (): Campaign[] => {
   try {
@@ -40,20 +49,23 @@ const addCitizenNotification = (campaign: Campaign) => {
   try {
     const stored = localStorage.getItem(CITIZEN_NOTIFICATIONS_KEY);
     const notifications = stored ? JSON.parse(stored) : [];
-    
+
     const newNotification = {
       id: `notif-${Date.now()}`,
-      title: "¡Nueva campaña de reciclaje!",
+      title: '¡Nueva campaña de reciclaje!',
       message: `Si reciclas ${campaign.objective.toLowerCase()} esta semana, ¡recibirás puntos dobles para tus beneficios! Precio: $${campaign.approximatePrice}/kg`,
-      type: "campaign",
+      type: 'campaign',
       read: false,
       createdAt: new Date().toISOString(),
       campaignId: campaign.id,
     };
-    
-    localStorage.setItem(CITIZEN_NOTIFICATIONS_KEY, JSON.stringify([newNotification, ...notifications]));
+
+    localStorage.setItem(
+      CITIZEN_NOTIFICATIONS_KEY,
+      JSON.stringify([newNotification, ...notifications]),
+    );
   } catch (error) {
-    console.error("Error adding citizen notification:", error);
+    console.error('Error adding citizen notification:', error);
   }
 };
 
@@ -65,38 +77,49 @@ export default function CampaignsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
-  const [objective, setObjective] = useState("");
-  const [description, setDescription] = useState("");
-  const [approximatePrice, setApproximatePrice] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [objective, setObjective] = useState('');
+  const [description, setDescription] = useState('');
+  const [approximatePrice, setApproximatePrice] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     setCampaigns(getCampaigns());
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-    toast.success("Sesión cerrada");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+      toast.success('Sesión cerrada');
+    } catch {
+      toast.error(
+        'No se pudo borrar la sesión guardada. Vuelve a intentar cerrar sesión antes de cerrar la app.',
+      );
+    }
   };
 
   const resetForm = () => {
-    setObjective("");
-    setDescription("");
-    setApproximatePrice("");
-    setEndDate("");
+    setObjective('');
+    setDescription('');
+    setApproximatePrice('');
+    setEndDate('');
   };
 
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!objective.trim() || !description.trim() || !approximatePrice.trim() || !endDate) {
-      toast.error("Por favor completa todos los campos");
+    if (
+      !objective.trim() ||
+      !description.trim() ||
+      !approximatePrice.trim() ||
+      !endDate
+    ) {
+      toast.error('Por favor completa todos los campos');
       return;
     }
 
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 800));
 
     const newCampaign: Campaign = {
       id: `campaign-${Date.now()}`,
@@ -105,7 +128,7 @@ export default function CampaignsPage() {
       approximatePrice: approximatePrice.trim(),
       endDate,
       createdAt: new Date().toISOString(),
-      status: "active",
+      status: 'active',
     };
 
     const updatedCampaigns = [newCampaign, ...campaigns];
@@ -118,23 +141,23 @@ export default function CampaignsPage() {
     setIsSubmitting(false);
     setIsModalOpen(false);
     resetForm();
-    toast.success("¡Campaña creada exitosamente! Los ciudadanos han sido notificados.");
+    toast.success('¡Campaña creada exitosamente! Los ciudadanos han sido notificados.');
   };
 
   const handleAcceptCampaign = (campaignId: string) => {
     const updatedCampaigns = campaigns.map((c) =>
-      c.id === campaignId ? { ...c, status: "accepted" as const } : c
+      c.id === campaignId ? { ...c, status: 'accepted' as const } : c,
     );
     setCampaigns(updatedCampaigns);
     saveCampaigns(updatedCampaigns);
-    toast.success("¡Campaña marcada como aceptada!");
+    toast.success('¡Campaña marcada como aceptada!');
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-CO', {
       day: 'numeric',
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -143,7 +166,9 @@ export default function CampaignsPage() {
       {/* Header */}
       <header className="sticky top-0 bg-primary px-5 py-4 flex items-center justify-between z-50">
         <div>
-          <h1 className="text-xl font-display font-bold text-primary-foreground">Centro de Acopio</h1>
+          <h1 className="text-xl font-display font-bold text-primary-foreground">
+            Centro de Acopio
+          </h1>
           <p className="text-sm text-primary-foreground/80">Gestiona tus campañas</p>
         </div>
         <button
@@ -172,13 +197,10 @@ export default function CampaignsPage() {
                 No tienes campañas activas
               </h3>
               <p className="text-muted-foreground text-sm max-w-xs mx-auto mb-6">
-                Las campañas te permiten recolectar materiales específicos de los ciudadanos. 
-                Crea tu primera campaña y comienza a recibir reciclables.
+                Las campañas te permiten recolectar materiales específicos de los
+                ciudadanos. Crea tu primera campaña y comienza a recibir reciclables.
               </p>
-              <Button
-                onClick={() => setIsModalOpen(true)}
-                className="eco-button-primary"
-              >
+              <Button onClick={() => setIsModalOpen(true)} className="eco-button-primary">
                 <Plus className="w-5 h-5 mr-2" />
                 Crear mi primera campaña
               </Button>
@@ -194,8 +216,10 @@ export default function CampaignsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-foreground">{campaign.objective}</h3>
-                        {campaign.status === "accepted" ? (
+                        <h3 className="font-semibold text-foreground">
+                          {campaign.objective}
+                        </h3>
+                        {campaign.status === 'accepted' ? (
                           <Badge className="bg-primary/10 text-primary border-0 text-xs">
                             <CheckCircle className="w-3 h-3 mr-1" />
                             Aceptada
@@ -223,7 +247,7 @@ export default function CampaignsPage() {
                         <span>Hasta {formatDate(campaign.endDate)}</span>
                       </div>
                     </div>
-                    {campaign.status === "active" && (
+                    {campaign.status === 'active' && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -254,7 +278,9 @@ export default function CampaignsPage() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">Crear nueva campaña</DialogTitle>
+            <DialogTitle className="font-display text-xl">
+              Crear nueva campaña
+            </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleCreateCampaign} className="space-y-4 mt-4">
@@ -320,7 +346,7 @@ export default function CampaignsPage() {
               className="w-full eco-button-primary mt-6"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Creando..." : "Crear campaña"}
+              {isSubmitting ? 'Creando...' : 'Crear campaña'}
             </Button>
           </form>
         </DialogContent>

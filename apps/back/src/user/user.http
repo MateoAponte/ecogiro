@@ -1,31 +1,38 @@
-GET http://localhost:3000/api/v1/user/69c5da1b4c47e7e8333dda89
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
+# @baseUrl = http://localhost:3000/api/v1/user
+@baseUrl = https://ecogiro-1r2o.onrender.com/api/v1/user
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3OTIxODg5NTEsImV4cCI6MTc5Mjc5Mzc1MX0.cZjZi7FF_oCvhdo3O6Ecn61ff2xHpys_XZyKMDQda0Q
+@id = 7
 
-GET http://localhost:3000/api/v1/health
+@citizen = { "name": "John Doe", "email": "john@example.com", "password": "Abcd!123456789", "address": "Calle 68 Sur #49-21", "phone": "+573001234567", "rol": 1 }
 
-GET http://localhost:3000/api/v1/user
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
+@recoveryAgent = {"name":"John Doe","email":"recovery@example.com","password":"Abcd!123456789","address":"Calle 68 Sur #49-21","phone":"+573001234567","rol":2}
+@recoveryAgent2 = {"name":"John Doe","email":"recovery2@example.com","password":"Abcd!123456789","address":"Calle 68 Sur #49-21","phone":"+573001234567","rol":2}
 
-POST http://localhost:3000/api/v1/user
+### Get a user
+GET {{baseUrl}}/{{id}}
+Authorization: Bearer {{authToken}}
+
+### List users
+GET {{baseUrl}}
+Authorization: Bearer {{authToken}}
+
+### Create a user
+POST {{baseUrl}}
 Content-Type: application/json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "Abcd!123456789",
-  "address": "Calle 68 Sur #49-21",
-  "phone": "+573001234567"
-}
+{{citizen}}
 
-PATCH http://localhost:3000/api/v1/user/69c5da1b4c47e7e8333dda89
+### Update a user
+PATCH {{baseUrl}}/{{id}}
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
+Authorization: Bearer {{authToken}}
 
 {
   "name": "John Doe 2",
   "email": "john@example.com",
-  "password": "Abcd!123456789"
+  "eco_points": 2
 }
 
-DELETE http://localhost:3000/api/v1/user/69c5da1b4c47e7e8333dda89
+### Delete a user
+DELETE {{baseUrl}}/{{id}}
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJyb2wiOjAsImFjdGl2aXRpZXMiOlsxLDBdLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3NzQ1NzY1MDMsImV4cCI6MTc3NTE4MTMwM30.Z75abFsbdntSY-zYIvmnbeO9F96bAunPtwppU2_ZGEo
+Authorization: Bearer {{authToken}}

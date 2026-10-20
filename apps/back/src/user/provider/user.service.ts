@@ -74,9 +74,17 @@ export class UserService {
     if (user === null)
       throw new NotFoundException(`User with id ${id} not found`);
 
-    const update = await this.userRepository.updateUser(id, updateUserDto);
+    if (!Object.keys(updateUserDto).length) {
+      throw new BadRequestException('Provide at least one field to update');
+    }
+    const changes = { ...updateUserDto };
+    if (changes.password !== undefined) {
+      changes.password = await this.authService.hashPassword(changes.password);
+    }
+    const update = await this.userRepository.updateUser(id, changes);
 
-    if (update.modifiedCount <= 0) return 'The user was already updated';
+    if (update.affected === 0)
+      throw new NotFoundException(`User with id ${id} not found`);
     return 'User updated successfully';
   }
 

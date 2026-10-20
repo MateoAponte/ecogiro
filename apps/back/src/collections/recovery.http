@@ -1,0 +1,72 @@
+@baseUrl = http://localhost:3000/api/v1/recovery
+@userId = 7
+@id = ecb641a4-c071-4b66-993f-e314de994f57
+@agentToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OSwiZW1haWwiOiJyZWNvdmVyeUBleGFtcGxlLmNvbSIsInJvbCI6MiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNzkyMjcyNTc1LCJleHAiOjE3OTI4NzczNzV9.qTIi9JnrXIENBwSTR5RqFdKJ2XCs5kZdKLb4BqJcohE
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwicm9sIjoxLCJuYW1lIjoiSm9obiBEb2UgMyIsImlhdCI6MTc5MjI3MjYwNCwiZXhwIjoxNzkyODc3NDA0fQ.JUS-qELAnk9NdJY6V2yNUR_JsvnmHLLo2uua1davmhY
+
+### Create a recovery
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+{
+  "scheduled_date": "2022-01-01T00:00:00.000Z",
+  "description": "description",
+  "address": "address",
+  "comments": "comments",
+  "status": 1,
+  "user_id": {{userId}}
+}
+
+### List by user
+GET {{baseUrl}}?user_id={{userId}}&page=1&limit=20
+Authorization: Bearer {{authToken}}
+
+### List all recoveries (requires a recovery agent or administrator token)
+GET {{baseUrl}}/all?page=1&limit=20
+Authorization: Bearer {{agentToken}}
+
+### Filter by user, status and inclusive scheduled date range
+GET {{baseUrl}}?user_id={{userId}}&page=1&limit=10&status=0&dateFrom=2026-10-01T00:00:00.000Z&dateTo=2026-10-31T23:59:59.999Z
+Authorization: Bearer {{authToken}}
+
+### Filter all recoveries by status
+GET {{baseUrl}}/all?page=1&limit=10&status=1
+Authorization: Bearer {{agentToken}}
+
+### Find by recovery ID
+GET {{baseUrl}}/{{id}}
+Authorization: Bearer {{authToken}}
+
+### Accept a recovery (recuperador con rol 2; no requiere body)
+# Usa una solicitud CREATED/PENDING sin agente y creada por otro usuario.
+# Respuesta: 200 con status 2 y agent_id del recuperador autenticado.
+PATCH {{baseUrl}}/{{id}}/accept
+Authorization: Bearer {{agentToken}}
+Accept: application/json
+
+### Update a recovery
+PATCH {{baseUrl}}/{{id}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+{
+  "scheduled_date": "2022-01-01T00:00:00.000Z",
+  "description": "description",
+  "address": "address 2",
+  "comments": "comments",
+  "status": 1,
+  "user_id": 5
+}
+
+### Delete a recovery
+DELETE {{baseUrl}}/{{id}}
+Authorization: Bearer {{authToken}}
+
+### Record actual weight and complete the recovery
+PATCH {{baseUrl}}/{{id}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "recycled_kg": 12.5,
+  "status": 5
+}

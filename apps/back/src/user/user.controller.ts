@@ -43,24 +43,25 @@ export class UserController {
   }
 
   @GetAllUsersDocumentation()
-  @AccessValidator({
-    roles: [Rol.USER],
-  })
+  // @AccessValidator({
+  //   roles: [Rol.USER],
+  // })
   @Get()
   findAll(): Promise<UserResponseDto[]> {
     return this.userService.findAll();
   }
 
   @GetUserDocumentation()
-  @AccessValidator({
-    roles: [Rol.USER],
-  })
+  // @AccessValidator({
+  //   roles: [Rol.USER],
+  // })
   @Get(':id')
   findOne(@Param('id') id: string): Promise<UserResponseDto> {
     return this.userService.findOne(id);
   }
 
   @UpdateUserDocumentation()
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -71,8 +72,8 @@ export class UserController {
 
   @DeleteUserDocumentation()
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':id')
   remove(@Param('id') id: string): Promise<DeleteResult> {
     return this.userService.remove(id);
   }

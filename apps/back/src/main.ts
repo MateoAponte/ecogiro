@@ -10,7 +10,6 @@ import {
 import { GlobalExceptionFilter } from './common/filters/httpException.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { API_PREFIX } from 'config/constants/prefix';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
@@ -18,7 +17,10 @@ async function bootstrap(): Promise<void> {
 
   app.use(helmet());
   app.enableCors({
-    origin: 'http://localhost:8080',
+    origin: (config.get<string>('CORS_ORIGINS') ?? '')
+      .split(',')
+      .map((origin) => origin.trim().replace(/\/$/, ''))
+      .filter(Boolean),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -40,7 +42,7 @@ async function bootstrap(): Promise<void> {
   );
 
   app.useLogger(new Logger());
-  app.setGlobalPrefix(API_PREFIX);
+  app.setGlobalPrefix(config.get<string>('API_PREFIX') ?? 'api/v1');
 
   const doc = new DocumentBuilder()
     .setTitle('Template API')
@@ -52,6 +54,9 @@ async function bootstrap(): Promise<void> {
   const document = SwaggerModule.createDocument(app, doc);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(parseInt(config.get<string>('PORT') ?? '3000', 10));
+  await app.listen(
+    parseInt(config.get<string>('PORT') ?? '3000', 10),
+    '0.0.0.0',
+  );
 }
 void bootstrap();

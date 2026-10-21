@@ -5,7 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { withMedailUnlocks, type Reward } from '@/lib/catalog-api';
-import { rewardsQueryOptions, medailsQueryOptions, userMedailsQueryOptions } from '@/lib/catalog-queries';
+import {
+  rewardsQueryOptions,
+  medailsQueryOptions,
+  userMedailsQueryOptions,
+} from '@/lib/catalog-queries';
 import { MedailIcon } from '@/components/rewards/MedailIcon';
 import { RewardImage } from '@/components/rewards/RewardImage';
 import {
@@ -57,7 +61,11 @@ export default function RewardsPage() {
   const rewardsQuery = useQuery(rewardsQueryOptions);
   const medailsQuery = useQuery(medailsQueryOptions);
   const userMedailsQuery = useQuery(userMedailsQueryOptions(user?.user_id));
-  const medails = withMedailUnlocks(medailsQuery.data ?? [], userMedailsQuery.data ?? [], user?.user_id ?? 0);
+  const medails = withMedailUnlocks(
+    medailsQuery.data ?? [],
+    userMedailsQuery.data ?? [],
+    user?.user_id ?? 0,
+  );
   const unlocksKnown = userMedailsQuery.isSuccess;
   const userPoints = getTotalPoints();
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
@@ -93,16 +101,16 @@ export default function RewardsPage() {
   };
 
   return (
-    <MobileLayout>
-      <div className="px-5 py-6 space-y-6">
+    <MobileLayout className="md:max-w-3xl xl:max-w-5xl">
+      <div className="min-w-0 px-4 py-6 space-y-6 sm:px-5 md:px-8 md:py-8 md:space-y-8">
         {/* Points header */}
         <header className="text-center animate-fade-up">
           <div className="w-20 h-20 rounded-3xl bg-eco-green-light flex items-center justify-center mx-auto mb-4">
             <Leaf className="w-10 h-10 text-primary" strokeWidth={1.5} />
           </div>
           <p className="text-muted-foreground text-sm">Tus eco-puntos</p>
-          <h1 className="text-5xl font-display font-bold text-foreground">
-            {userPoints}
+          <h1 className="break-words text-4xl sm:text-5xl font-display font-bold text-foreground [overflow-wrap:anywhere]">
+            {userPoints.toLocaleString('es-CO')}
           </h1>
         </header>
 
@@ -118,7 +126,7 @@ export default function RewardsPage() {
             isEmpty={rewardsQuery.data?.length === 0}
             onRetry={() => void rewardsQuery.refetch()}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,10rem),1fr))] gap-3 sm:gap-4">
             {(rewardsQuery.data ?? []).map((reward) => {
               const pointsNeeded = reward.required_points - userPoints;
               const progress =
@@ -136,20 +144,22 @@ export default function RewardsPage() {
                   onClick={() => handleRewardClick(reward)}
                   disabled={!isAvailable}
                   className={cn(
-                    'eco-card text-center relative overflow-hidden flex flex-col min-h-[160px] text-left transition-all',
+                    'eco-card relative flex min-w-0 h-full flex-col items-stretch text-left transition-all p-4 sm:p-5',
                     isAvailable
                       ? 'cursor-pointer hover:shadow-elevated active:scale-[0.98]'
                       : 'opacity-60 cursor-not-allowed',
                   )}
                 >
                   <RewardImage src={reward.image_url} name={reward.name} />
-                  <h3 className="font-medium text-foreground text-sm">{reward.name}</h3>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 min-h-[28px]">
+                  <h3 className="pr-3 font-medium text-foreground text-sm sm:text-base leading-snug [overflow-wrap:anywhere]">
+                    {reward.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed [overflow-wrap:anywhere]">
                     {reward.description || '\u00A0'}
                   </p>
-                  <div className="mt-auto pt-2">
-                    <p className="text-xs text-muted-foreground">
-                      {reward.required_points} puntos
+                  <div className="mt-auto pt-4">
+                    <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">
+                      {reward.required_points.toLocaleString('es-CO')} puntos
                     </p>
                     {!isAvailable && (
                       <div className="mt-2">
@@ -159,8 +169,8 @@ export default function RewardsPage() {
                             style={{ width: `${progress}%` }}
                           />
                         </div>
-                        <span className="text-[10px] text-primary font-medium mt-1 block">
-                          ¡Te faltan {pointsNeeded} puntos!
+                        <span className="text-xs text-primary font-medium mt-2 block leading-relaxed [overflow-wrap:anywhere]">
+                          ¡Te faltan {pointsNeeded.toLocaleString('es-CO')} puntos!
                         </span>
                       </div>
                     )}
@@ -188,36 +198,60 @@ export default function RewardsPage() {
             isEmpty={medailsQuery.data?.length === 0}
             onRetry={() => void medailsQuery.refetch()}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,10rem),1fr))] gap-3 sm:gap-4">
             {medails.map((medal) => (
-              <div key={medal.id} className={cn("eco-card flex items-center gap-3 relative", unlocksKnown && !medal.is_unlocked && "opacity-50")}>
-                <div className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center bg-eco-green-light">
+              <div
+                key={medal.id}
+                className={cn(
+                  'eco-card relative flex h-full min-w-0 flex-col items-start gap-3 p-4 sm:p-5',
+                  unlocksKnown && !medal.is_unlocked && 'opacity-50',
+                )}
+              >
+                <div className="h-12 w-12 shrink-0 rounded-xl flex items-center justify-center bg-eco-green-light">
                   <MedailIcon name={medal.image_url} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-foreground text-sm break-words">
+                <div className="flex min-w-0 w-full flex-1 flex-col">
+                  <h3 className="font-medium text-foreground text-sm sm:text-base leading-snug [overflow-wrap:anywhere]">
                     {medal.name}
                   </h3>
-                  <p className="text-xs text-muted-foreground break-words">
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed [overflow-wrap:anywhere]">
                     {medal.description}
                   </p>
                   {unlocksKnown && (
-                    <p className={cn("text-[10px] font-medium mt-1", medal.is_unlocked ? "text-primary" : "text-muted-foreground")}>
+                    <p
+                      className={cn(
+                        'text-xs font-medium mt-auto pt-3',
+                        medal.is_unlocked ? 'text-primary' : 'text-muted-foreground',
+                      )}
+                    >
                       {medal.is_unlocked ? 'Desbloqueada' : 'Bloqueada'}
                     </p>
                   )}
                 </div>
                 {unlocksKnown && !medal.is_unlocked && (
-                  <Lock className="absolute top-2 right-2 w-3 h-3 text-muted-foreground" aria-hidden="true" />
+                  <Lock
+                    className="absolute top-2 right-2 w-3 h-3 text-muted-foreground"
+                    aria-hidden="true"
+                  />
                 )}
               </div>
             ))}
           </div>
-          {userMedailsQuery.isPending && <p role="status" className="text-xs text-muted-foreground">Comprobando tus medallas...</p>}
+          {userMedailsQuery.isPending && (
+            <p role="status" className="text-xs text-muted-foreground">
+              Comprobando tus medallas...
+            </p>
+          )}
           {userMedailsQuery.isError && (
             <div role="alert" className="text-sm text-destructive space-y-2 mt-3">
               <p>No se pudo comprobar cuáles medallas tienes desbloqueadas.</p>
-              <button type="button" className="underline" onClick={() => void userMedailsQuery.refetch()}>Reintentar</button>
+              <button
+                type="button"
+                className="underline"
+                onClick={() => void userMedailsQuery.refetch()}
+              >
+                Reintentar
+              </button>
             </div>
           )}
         </section>
@@ -253,7 +287,7 @@ export default function RewardsPage() {
 
       {/* Confirmation Dialog */}
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <AlertDialogContent className="max-w-[90%] rounded-2xl">
+        <AlertDialogContent className="w-[calc(100%-2rem)] max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl p-5 sm:p-6">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-center">
               {selectedReward && (
@@ -261,7 +295,7 @@ export default function RewardsPage() {
               )}
               ¿Canjear recompensa?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-center">
+            <AlertDialogDescription className="text-center [overflow-wrap:anywhere]">
               Estás a punto de canjear{' '}
               <strong>{selectedReward?.required_points} puntos</strong> por "
               {selectedReward?.name}". Esta acción no se puede deshacer.
